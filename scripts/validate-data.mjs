@@ -55,6 +55,7 @@ for (const entry of manifest.exams) {
     if (q.answer.some((a) => a < 0 || a >= q.pt.options.length)) fail(`${w} índice de resposta fora do intervalo`);
     if (new Set(q.answer).size !== q.answer.length) fail(`${w} respostas repetidas`);
     if (!/^https?:\/\//.test(q.source || '')) fail(`${w} source inválida`);
+    if (q.verified !== undefined && !/^\d{4}-(0[1-9]|1[0-2])$/.test(q.verified)) fail(`${w} verified deve ser AAAA-MM`);
 
     // anti-repetição: o mesmo enunciado não pode aparecer em dois simulados
     const key = q.en.stem.toLowerCase().replace(/\s+/g, ' ').trim();

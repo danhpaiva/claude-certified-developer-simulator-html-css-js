@@ -45,7 +45,14 @@ export function explainBlock(q, copy) {
     h('h4', {}, t('explanation')),
     h('div', { class: 'rich' }, rich(copy.explanation)),
     q.source
-      ? h('p', { class: 'source' }, t('source') + ': ', h('a', { href: q.source, target: '_blank', rel: 'noopener noreferrer' }, q.source))
+      ? h(
+          'p',
+          { class: 'source' },
+          t('source') + ': ',
+          h('a', { href: q.source, target: '_blank', rel: 'noopener noreferrer' }, q.source),
+          // mês em que a questão foi conferida na documentação (a plataforma muda rápido)
+          q.verified ? ` · ${t('verifiedOn', { date: q.verified })}` : null,
+        )
       : null,
   );
 }
