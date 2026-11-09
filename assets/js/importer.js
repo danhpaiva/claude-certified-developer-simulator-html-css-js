@@ -7,7 +7,7 @@ const MAX_QUESTIONS = 500;
 const MAX_DURATION_MS = 24 * 3600 * 1000;
 
 const ATTEMPT_ID = /^[A-Za-z0-9._+-]{1,120}$/;
-const OFFICIAL_EXAM_ID = /^D\d{1,3}-S\d{1,3}$/;
+const OFFICIAL_EXAM_ID = /^DIA\d{1,3}-SIM\d{1,3}$/;
 
 const isObject = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
 const isInt = (value, min, max) => Number.isInteger(value) && value >= min && value <= max;

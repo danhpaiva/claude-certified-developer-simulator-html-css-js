@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { normalizeAttempt, normalizeTrain, parseHistory, MAX_ATTEMPTS_PER_IMPORT } from '../assets/js/importer.js';
 
-const valid = () => ({ id: 'D1-S1-1700000000000', examId: 'D1-S1', finishedAt: 1700000000000, mode: 'exam', lang: 'pt', durationMs: 5400000, answers: { 1: [0], 2: [1, 3] }, flags: [4], correct: 40, total: 53, percent: 0.75 });
+const valid = () => ({ id: 'DIA1-SIM1-1700000000000', examId: 'DIA1-SIM1', finishedAt: 1700000000000, mode: 'exam', lang: 'pt', durationMs: 5400000, answers: { 1: [0], 2: [1, 3] }, flags: [4], correct: 40, total: 53, percent: 0.75 });
 
 test('normalizeAttempt: tentativa válida passa e o percentual é recalculado', () => {
   const a = normalizeAttempt({ ...valid(), percent: 0.99 }); // arquivo mente sobre o percentual
@@ -24,9 +24,9 @@ test('normalizeAttempt: id inválido (tipo, tamanho, caracteres)', () => {
 });
 
 test('normalizeAttempt: examId só aceita simulado oficial ou treino', () => {
-  assert.ok(normalizeAttempt({ ...valid(), examId: 'D12-S3' }));
+  assert.ok(normalizeAttempt({ ...valid(), examId: 'DIA12-SIM3' }));
   assert.ok(normalizeAttempt({ ...valid(), examId: 'TRAIN-mw9gw4w1cq6p' }));
-  for (const examId of ['D1-S1/../x', 'train-x', 'TRAIN-', 'TRAIN-ABC', 'D1S1', 5, null]) assert.equal(normalizeAttempt({ ...valid(), examId }), null, String(examId));
+  for (const examId of ['DIA1-SIM1/../x', 'train-x', 'TRAIN-', 'TRAIN-ABC', 'D1S1', 5, null]) assert.equal(normalizeAttempt({ ...valid(), examId }), null, String(examId));
 });
 
 test('normalizeAttempt: finishedAt, total e correct precisam ser números coerentes', () => {
@@ -51,7 +51,7 @@ test('normalizeAttempt: answers é limpo (chaves numéricas, índices 0–4, sem
 test('normalizeAttempt: answers/flags ausentes ou de tipo errado viram vazios', () => {
   const a = normalizeAttempt({ ...valid(), answers: 'x', flags: { 1: 1 } });
   assert.deepEqual([a.answers, a.flags], [{}, []]);
-  const b = normalizeAttempt({ id: 'ok', examId: 'D1-S1', finishedAt: 1000, correct: 40, total: 53 }); // formato mínimo antigo
+  const b = normalizeAttempt({ id: 'ok', examId: 'DIA1-SIM1', finishedAt: 1000, correct: 40, total: 53 }); // formato mínimo antigo
   assert.deepEqual([b.answers, b.flags, b.mode], [{}, [], 'exam']);
 });
 
@@ -60,26 +60,26 @@ test('normalizeAttempt: flags filtradas e sem repetição', () => {
 });
 
 test('normalizeTrain: definição válida', () => {
-  const t = normalizeTrain({ id: 'TRAIN-abc1', title: '  D2  ', refs: [['D1-S1', 3], ['D1-S2', 10]], createdAt: 5, extra: 1 });
-  assert.deepEqual(t, { id: 'TRAIN-abc1', title: 'D2', refs: [['D1-S1', 3], ['D1-S2', 10]], createdAt: 5 });
+  const t = normalizeTrain({ id: 'TRAIN-abc1', title: '  D2  ', refs: [['DIA1-SIM1', 3], ['DIA1-SIM2', 10]], createdAt: 5, extra: 1 });
+  assert.deepEqual(t, { id: 'TRAIN-abc1', title: 'D2', refs: [['DIA1-SIM1', 3], ['DIA1-SIM2', 10]], createdAt: 5 });
 });
 
 test('normalizeTrain: rejeita id, título e referências inválidos (uma ref ruim invalida o treino todo)', () => {
-  const base = { id: 'TRAIN-abc1', title: 'D2', refs: [['D1-S1', 1]] };
-  for (const patch of [{ id: 'D1-S1' }, { id: 'TRAIN-' }, { title: '' }, { title: 5 }, { refs: [] }, { refs: 'x' }, { refs: [['D1-S1']] }, { refs: [['D1-S1', 0]] },
-    { refs: [['TRAIN-x', 1]] }, { refs: [['D1-S1', 1.5]] }, { refs: Array.from({ length: 501 }, () => ['D1-S1', 1]) }, { refs: [['D1-S1', 1], null] }]) {
+  const base = { id: 'TRAIN-abc1', title: 'D2', refs: [['DIA1-SIM1', 1]] };
+  for (const patch of [{ id: 'DIA1-SIM1' }, { id: 'TRAIN-' }, { title: '' }, { title: 5 }, { refs: [] }, { refs: 'x' }, { refs: [['DIA1-SIM1']] }, { refs: [['DIA1-SIM1', 0]] },
+    { refs: [['TRAIN-x', 1]] }, { refs: [['DIA1-SIM1', 1.5]] }, { refs: Array.from({ length: 501 }, () => ['DIA1-SIM1', 1]) }, { refs: [['DIA1-SIM1', 1], null] }]) {
     assert.equal(normalizeTrain({ ...base, ...patch }), null, JSON.stringify(patch).slice(0, 60));
   }
 });
 
 test('normalizeTrain: título é cortado em 80 caracteres', () => {
-  assert.equal(normalizeTrain({ id: 'TRAIN-a', title: 'x'.repeat(200), refs: [['D1-S1', 1]] }).title.length, 80);
+  assert.equal(normalizeTrain({ id: 'TRAIN-a', title: 'x'.repeat(200), refs: [['DIA1-SIM1', 1]] }).title.length, 80);
 });
 
 test('parseHistory: aceita o formato antigo (lista) e o novo (objeto com attempts e trains)', () => {
   const legacy = parseHistory([valid()]);
   assert.deepEqual([legacy.ok, legacy.attempts.length, legacy.trains.length], [true, 1, 0]);
-  const v2 = parseHistory({ version: 2, attempts: [valid()], trains: [{ id: 'TRAIN-abc1', title: 'x', refs: [['D1-S1', 1]] }] });
+  const v2 = parseHistory({ version: 2, attempts: [valid()], trains: [{ id: 'TRAIN-abc1', title: 'x', refs: [['DIA1-SIM1', 1]] }] });
   assert.deepEqual([v2.ok, v2.attempts.length, v2.trains.length], [true, 1, 1]);
 });
 

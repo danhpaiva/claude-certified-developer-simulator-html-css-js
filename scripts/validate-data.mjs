@@ -7,6 +7,11 @@ import { shareImagePaths } from './site-paths.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const errors = [];
+
+// Limites do teste de viés de tamanho das alternativas (só vale para simulados com questões suficientes).
+const MIN_FOR_BIAS_CHECK = 8;
+const MAX_EXTREME_SHARE = 0.4; // correta como a mais longa (ou a mais curta) em no máximo 40% das questões de resposta única
+const MAX_MULTI_LONGER_SHARE = 0.65;
 const fail = (msg) => errors.push(msg);
 const readJson = (rel) => JSON.parse(readFileSync(join(root, rel), 'utf8'));
 
@@ -56,6 +61,32 @@ for (const entry of manifest.exams) {
     if (seenStems.has(key)) fail(`${w} enunciado duplicado de ${seenStems.get(key)}`);
     else seenStems.set(key, `${exam.id} Q${q.num}`);
   });
+
+  // ---------- viés de tamanho: o tamanho da alternativa não pode entregar a resposta ----------
+  // Resposta única: a correta não pode ser (quase) sempre a mais longa nem a mais curta.
+  // Múltipla resposta: as corretas não podem ser (quase) sempre mais longas que as erradas.
+  const mean = (xs) => xs.reduce((a, b) => a + b, 0) / xs.length;
+  for (const lang of ['pt', 'en']) {
+    const singles = exam.questions.filter((q) => q.n === 1);
+    const multis = exam.questions.filter((q) => q.n > 1);
+    if (singles.length >= MIN_FOR_BIAS_CHECK) {
+      const lens = (q) => q[lang].options.map((o) => o.length);
+      const longest = singles.filter((q) => lens(q)[q.answer[0]] === Math.max(...lens(q)) && lens(q).filter((x) => x === Math.max(...lens(q))).length === 1).length;
+      const shortest = singles.filter((q) => lens(q)[q.answer[0]] === Math.min(...lens(q)) && lens(q).filter((x) => x === Math.min(...lens(q))).length === 1).length;
+      const ratio = mean(singles.map((q) => lens(q)[q.answer[0]] / mean(lens(q))));
+      if (longest / singles.length > MAX_EXTREME_SHARE) fail(`${where} (${lang}): a alternativa correta é a MAIS LONGA em ${longest}/${singles.length} questões de resposta única (${Math.round((100 * longest) / singles.length)}%; máximo ${MAX_EXTREME_SHARE * 100}%)`);
+      if (shortest / singles.length > MAX_EXTREME_SHARE) fail(`${where} (${lang}): a alternativa correta é a MAIS CURTA em ${shortest}/${singles.length} questões de resposta única (${Math.round((100 * shortest) / singles.length)}%; máximo ${MAX_EXTREME_SHARE * 100}%)`);
+      if (ratio < 0.9 || ratio > 1.1) fail(`${where} (${lang}): tamanho médio da correta = ${ratio.toFixed(2)}x a média das alternativas (esperado entre 0.90 e 1.10)`);
+    }
+    if (multis.length >= MIN_FOR_BIAS_CHECK) {
+      const lens = (q) => q[lang].options.map((o) => o.length);
+      const split = (q) => [mean(q.answer.map((i) => lens(q)[i])), mean(lens(q).filter((_, i) => !q.answer.includes(i)))];
+      const longer = multis.filter((q) => { const [c, w] = split(q); return c > w; }).length;
+      const ratio = mean(multis.map((q) => { const [c, w] = split(q); return c / w; }));
+      if (longer / multis.length > MAX_MULTI_LONGER_SHARE) fail(`${where} (${lang}): em ${longer}/${multis.length} questões de múltipla resposta as corretas são mais longas que as erradas (${Math.round((100 * longer) / multis.length)}%; máximo ${MAX_MULTI_LONGER_SHARE * 100}%)`);
+      if (ratio < 0.85 || ratio > 1.15) fail(`${where} (${lang}): múltipla resposta: corretas = ${ratio.toFixed(2)}x o tamanho das erradas (esperado entre 0.85 e 1.15)`);
+    }
+  }
 
   for (const [d, count] of Object.entries(entry.domains)) {
     if ((perDomain[d] || 0) !== count) fail(`${where} domínio D${d}: ${perDomain[d] || 0} questões, manifesto diz ${count}`);

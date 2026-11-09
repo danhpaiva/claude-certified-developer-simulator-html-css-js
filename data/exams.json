@@ -35,9 +35,9 @@
  },
  "exams": [
   {
-   "id": "D1-S1",
-   "day": "D1",
-   "set": "S1",
+   "id": "DIA1-SIM1",
+   "day": 1,
+   "set": 1,
    "total": 53,
    "minutes": 120,
    "domains": {
@@ -51,16 +51,16 @@
     "8": 6
    },
    "pdfs": {
-    "pt_exam": "pdfs/D1/S1/CCDV-F_D1_S1_PT_prova.pdf",
-    "pt_key": "pdfs/D1/S1/CCDV-F_D1_S1_PT_gabarito.pdf",
-    "en_exam": "pdfs/D1/S1/CCDV-F_D1_S1_EN_exam.pdf",
-    "en_key": "pdfs/D1/S1/CCDV-F_D1_S1_EN_answer-key.pdf"
+    "pt_exam": "pdfs/dia1/sim1/CCDV-F_Dia1_Sim1_PT_prova.pdf",
+    "pt_key": "pdfs/dia1/sim1/CCDV-F_Dia1_Sim1_PT_gabarito.pdf",
+    "en_exam": "pdfs/dia1/sim1/CCDV-F_Dia1_Sim1_EN_exam.pdf",
+    "en_key": "pdfs/dia1/sim1/CCDV-F_Dia1_Sim1_EN_answer-key.pdf"
    }
   },
   {
-   "id": "D1-S2",
-   "day": "D1",
-   "set": "S2",
+   "id": "DIA1-SIM2",
+   "day": 1,
+   "set": 2,
    "total": 53,
    "minutes": 120,
    "domains": {
@@ -74,16 +74,16 @@
     "8": 6
    },
    "pdfs": {
-    "pt_exam": "pdfs/D1/S2/CCDV-F_D1_S2_PT_prova.pdf",
-    "pt_key": "pdfs/D1/S2/CCDV-F_D1_S2_PT_gabarito.pdf",
-    "en_exam": "pdfs/D1/S2/CCDV-F_D1_S2_EN_exam.pdf",
-    "en_key": "pdfs/D1/S2/CCDV-F_D1_S2_EN_answer-key.pdf"
+    "pt_exam": "pdfs/dia1/sim2/CCDV-F_Dia1_Sim2_PT_prova.pdf",
+    "pt_key": "pdfs/dia1/sim2/CCDV-F_Dia1_Sim2_PT_gabarito.pdf",
+    "en_exam": "pdfs/dia1/sim2/CCDV-F_Dia1_Sim2_EN_exam.pdf",
+    "en_key": "pdfs/dia1/sim2/CCDV-F_Dia1_Sim2_EN_answer-key.pdf"
    }
   },
   {
-   "id": "D1-S3",
-   "day": "D1",
-   "set": "S3",
+   "id": "DIA1-SIM3",
+   "day": 1,
+   "set": 3,
    "total": 53,
    "minutes": 120,
    "domains": {
@@ -97,10 +97,10 @@
     "8": 6
    },
    "pdfs": {
-    "pt_exam": "pdfs/D1/S3/CCDV-F_D1_S3_PT_prova.pdf",
-    "pt_key": "pdfs/D1/S3/CCDV-F_D1_S3_PT_gabarito.pdf",
-    "en_exam": "pdfs/D1/S3/CCDV-F_D1_S3_EN_exam.pdf",
-    "en_key": "pdfs/D1/S3/CCDV-F_D1_S3_EN_answer-key.pdf"
+    "pt_exam": "pdfs/dia1/sim3/CCDV-F_Dia1_Sim3_PT_prova.pdf",
+    "pt_key": "pdfs/dia1/sim3/CCDV-F_Dia1_Sim3_PT_gabarito.pdf",
+    "en_exam": "pdfs/dia1/sim3/CCDV-F_Dia1_Sim3_EN_exam.pdf",
+    "en_key": "pdfs/dia1/sim3/CCDV-F_Dia1_Sim3_EN_answer-key.pdf"
    }
   }
  ]
