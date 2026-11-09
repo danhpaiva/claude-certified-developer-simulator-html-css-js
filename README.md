@@ -72,6 +72,8 @@ HTML, CSS e JavaScript puros. Sem frameworks, sem bundler, sem servidor.
 
 ## Sobre o exame
 
+> **Nomes:** "**Dia N · Simulado M**" é a ordem de estudo (dia do plano e número do simulado no dia). **D1 a D8** são os *domínios* do blueprint. São coisas diferentes.
+
 Os simulados seguem o **Exam Guide CCDV-F v1.0** (julho de 2026): 53 itens em 120 minutos, escolha única e múltipla resposta, nota escalada de 100 a 1.000 com corte em **720**. Cada simulado respeita o peso dos domínios:
 
 | Domínio | Peso | Questões por simulado |
@@ -153,8 +155,8 @@ assets/js/               módulos ES: main (rotas), home, exam, result, train, s
                          analysis e importer (lógica pura, testada), scoring, store, i18n, rich, dom
 assets/icons/            ícones do PWA (PNG) e o logo em SVG
 data/exams.json          manifesto (domínios, pesos, simulados, PDFs)
-data/exams/D1-S1.json    questões de cada simulado (PT + EN, respostas, explicações)
-pdfs/D1/S1/              PDFs de cada simulado (prova e gabarito, PT e EN)
+data/exams/DIA1-SIM1.json    questões de cada simulado (PT + EN, respostas, explicações)
+pdfs/dia1/sim1/              PDFs de cada simulado (prova e gabarito, PT e EN)
 scripts/                 validate-data, check-js, build, verify-build (CI e deploy);
                          generate-icons.py (gera os PNGs de assets/icons/, requer Pillow)
 docs/screenshots/        imagens deste README
@@ -163,14 +165,14 @@ docs/screenshots/        imagens deste README
 
 ## Adicionar um novo simulado
 
-Os simulados são gerados fora do site e exportados no formato do repositório: os dados vão para `data/exams/Dn-Sm.json` e o manifesto `data/exams.json` é atualizado com o novo item. Os PDFs são **opcionais**: se fornecidos, vão para `pdfs/Dn/Sm/` e o campo `pdfs` no manifesto aponta para eles; caso contrário, o campo `pdfs` é omitido e o site não exibe a linha de links.
+Os simulados são gerados fora do site e exportados no formato do repositório: os dados vão para `data/exams/DIAn-SIMm.json` e o manifesto `data/exams.json` é atualizado com o novo item. Os PDFs são **opcionais**: se fornecidos, vão para `pdfs/diaN/simM/` e o campo `pdfs` no manifesto aponta para eles; caso contrário, o campo `pdfs` é omitido e o site não exibe a linha de links.
 
 Depois de adicionar os arquivos:
 
 ```bash
 npm test
 git add data pdfs   # ou só data, se não houver PDFs
-git commit -m "feat: simulado Dn-Sm"
+git commit -m "feat: simulado DIAn-SIMm"
 ```
 
 O site lê o manifesto e passa a exibir o novo simulado sem nenhuma mudança de código.
@@ -179,7 +181,7 @@ O site lê o manifesto e passa a exibir o novo simulado sem nenhuma mudança de 
 
 | Situação | Item |
 | :---: | --- |
-| ✅ | Simulados D1-S1, D1-S2 e D1-S3 (159 questões) em PT e EN |
+| ✅ | Simulados do Dia 1 (Simulado 1, 2 e 3, 159 questões) em PT e EN |
 | ✅ | Site estático com modo prova, modo estudo, histórico e PDFs |
 | ✅ | CI e deploy em workflows separados |
 | 🔜 | Plano de 14 dias, com até 3 simulados por dia, aumentando a dificuldade |
@@ -191,7 +193,7 @@ Tudo roda no seu navegador. O histórico e o andamento ficam só no `localStorag
 
 ## Contribuir e reportar erros
 
-Achou uma resposta duvidosa, uma explicação desatualizada ou um erro de tradução? Abra uma *issue* informando o **simulado e o número da questão** (por exemplo, `D1-S2 Q20`) e, se possível, a página da documentação que contradiz o item. Correções de dados devem passar por `npm test` antes do PR.
+Achou uma resposta duvidosa, uma explicação desatualizada ou um erro de tradução? Abra uma *issue* informando o **simulado e o número da questão** (por exemplo, "Dia 1 · Simulado 2, questão 20") e, se possível, a página da documentação que contradiz o item. Correções de dados devem passar por `npm test` antes do PR.
 
 ## Licença
 

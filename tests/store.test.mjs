@@ -26,7 +26,7 @@ test('store.setPref e getPref: salva e recupera preferência', () => {
 
 test('store.session: retorna null se não existir', () => {
   localStorage.clear();
-  assert.equal(store.session('D1-S1'), null);
+  assert.equal(store.session('DIA1-SIM1'), null);
 });
 
 test('store.saveSession e session: salva e recupera sessão', () => {
@@ -41,17 +41,17 @@ test('store.saveSession e session: salva e recupera sessão', () => {
     current: 1,
   };
   
-  store.saveSession('D1-S1', session);
-  const recovered = store.session('D1-S1');
+  store.saveSession('DIA1-SIM1', session);
+  const recovered = store.session('DIA1-SIM1');
   
   assert.deepEqual(recovered, session);
 });
 
 test('store.clearSession: remove sessão', () => {
   localStorage.clear();
-  store.saveSession('D1-S1', { mode: 'exam' });
-  store.clearSession('D1-S1');
-  assert.equal(store.session('D1-S1'), null);
+  store.saveSession('DIA1-SIM1', { mode: 'exam' });
+  store.clearSession('DIA1-SIM1');
+  assert.equal(store.session('DIA1-SIM1'), null);
 });
 
 test('store.attempts: retorna array vazio se não houver', () => {
@@ -62,8 +62,8 @@ test('store.attempts: retorna array vazio se não houver', () => {
 test('store.addAttempt: adiciona tentativa', () => {
   localStorage.clear();
   const attempt = {
-    id: 'D1-S1-123456',
-    examId: 'D1-S1',
+    id: 'DIA1-SIM1-123456',
+    examId: 'DIA1-SIM1',
     finishedAt: Date.now(),
     mode: 'exam',
     lang: 'pt',
@@ -76,7 +76,7 @@ test('store.addAttempt: adiciona tentativa', () => {
   const attempts = store.attempts();
   
   assert.equal(attempts.length, 1);
-  assert.equal(attempts[0].id, 'D1-S1-123456');
+  assert.equal(attempts[0].id, 'DIA1-SIM1-123456');
 });
 
 test('store.addAttempt: mantém no máximo 200 tentativas', () => {
@@ -86,7 +86,7 @@ test('store.addAttempt: mantém no máximo 200 tentativas', () => {
   for (let i = 0; i < 205; i++) {
     store.addAttempt({
       id: `attempt-${i}`,
-      examId: 'D1-S1',
+      examId: 'DIA1-SIM1',
       finishedAt: Date.now() + i,
       mode: 'exam',
       correct: 40,
@@ -102,8 +102,8 @@ test('store.addAttempt: mantém no máximo 200 tentativas', () => {
 test('store.addAttempt: mais recentes primeiro', () => {
   localStorage.clear();
   
-  store.addAttempt({ id: 'first', examId: 'D1-S1', finishedAt: 1000, correct: 10, total: 53, percent: 0.2 });
-  store.addAttempt({ id: 'second', examId: 'D1-S1', finishedAt: 2000, correct: 20, total: 53, percent: 0.4 });
+  store.addAttempt({ id: 'first', examId: 'DIA1-SIM1', finishedAt: 1000, correct: 10, total: 53, percent: 0.2 });
+  store.addAttempt({ id: 'second', examId: 'DIA1-SIM1', finishedAt: 2000, correct: 20, total: 53, percent: 0.4 });
   
   const attempts = store.attempts();
   assert.equal(attempts[0].id, 'second');
@@ -113,11 +113,11 @@ test('store.addAttempt: mais recentes primeiro', () => {
 test('store.attempt: encontra tentativa por ID', () => {
   localStorage.clear();
   
-  store.addAttempt({ id: 'test-123', examId: 'D1-S1', finishedAt: Date.now(), correct: 40, total: 53, percent: 0.75 });
+  store.addAttempt({ id: 'test-123', examId: 'DIA1-SIM1', finishedAt: Date.now(), correct: 40, total: 53, percent: 0.75 });
   
   const found = store.attempt('test-123');
   assert.equal(found.id, 'test-123');
-  assert.equal(found.examId, 'D1-S1');
+  assert.equal(found.examId, 'DIA1-SIM1');
 });
 
 test('store.attempt: retorna null se não encontrar', () => {
@@ -128,7 +128,7 @@ test('store.attempt: retorna null se não encontrar', () => {
 test('store.clearAttempts: limpa todas as tentativas', () => {
   localStorage.clear();
   
-  store.addAttempt({ id: 'test-1', examId: 'D1-S1', finishedAt: Date.now(), correct: 40, total: 53, percent: 0.75 });
+  store.addAttempt({ id: 'test-1', examId: 'DIA1-SIM1', finishedAt: Date.now(), correct: 40, total: 53, percent: 0.75 });
   store.clearAttempts();
   
   assert.deepEqual(store.attempts(), []);
@@ -138,8 +138,8 @@ test('store.importAttempts: importa novas tentativas', () => {
   localStorage.clear();
   
   const newAttempts = [
-    { id: 'import-1', examId: 'D1-S1', finishedAt: 1000, correct: 40, total: 53, percent: 0.75 },
-    { id: 'import-2', examId: 'D1-S2', finishedAt: 2000, correct: 45, total: 53, percent: 0.85 },
+    { id: 'import-1', examId: 'DIA1-SIM1', finishedAt: 1000, correct: 40, total: 53, percent: 0.75 },
+    { id: 'import-2', examId: 'DIA1-SIM2', finishedAt: 2000, correct: 45, total: 53, percent: 0.85 },
   ];
   
   const result = store.importAttempts(newAttempts);
@@ -152,11 +152,11 @@ test('store.importAttempts: importa novas tentativas', () => {
 test('store.importAttempts: ignora duplicatas', () => {
   localStorage.clear();
   
-  store.addAttempt({ id: 'existing', examId: 'D1-S1', finishedAt: 1000, correct: 40, total: 53, percent: 0.75 });
+  store.addAttempt({ id: 'existing', examId: 'DIA1-SIM1', finishedAt: 1000, correct: 40, total: 53, percent: 0.75 });
   
   const newAttempts = [
-    { id: 'existing', examId: 'D1-S1', finishedAt: 1000, correct: 40, total: 53, percent: 0.75 },
-    { id: 'new', examId: 'D1-S2', finishedAt: 2000, correct: 45, total: 53, percent: 0.85 },
+    { id: 'existing', examId: 'DIA1-SIM1', finishedAt: 1000, correct: 40, total: 53, percent: 0.75 },
+    { id: 'new', examId: 'DIA1-SIM2', finishedAt: 2000, correct: 45, total: 53, percent: 0.85 },
   ];
   
   const result = store.importAttempts(newAttempts);
@@ -170,8 +170,8 @@ test('store.importAttempts: valida formato', () => {
   localStorage.clear();
   
   const invalid = [
-    { /* sem id */ examId: 'D1-S1', finishedAt: 1000 },
-    { id: 'ok', examId: 'D1-S1', finishedAt: 2000, correct: 40, total: 53, percent: 0.75 },
+    { /* sem id */ examId: 'DIA1-SIM1', finishedAt: 1000 },
+    { id: 'ok', examId: 'DIA1-SIM1', finishedAt: 2000, correct: 40, total: 53, percent: 0.75 },
   ];
   
   const result = store.importAttempts(invalid);
@@ -196,7 +196,7 @@ test('store: tolera falhas de localStorage', () => {
 // ---------- treinos ----------
 test('store.saveTrain/train/trains: guarda a definição (só referências)', () => {
   localStorage.clear();
-  const def = { id: 'TRAIN-a1', title: 'D2', refs: [['D1-S1', 1], ['D1-S2', 4]], createdAt: 1 };
+  const def = { id: 'TRAIN-a1', title: 'D2', refs: [['DIA1-SIM1', 1], ['DIA1-SIM2', 4]], createdAt: 1 };
   store.saveTrain(def);
   assert.deepEqual(store.train('TRAIN-a1'), def);
   assert.equal(store.train('TRAIN-inexistente'), null);
@@ -226,7 +226,7 @@ test('store.clearAttempts: libera os treinos que só existiam por causa do hist�
 });
 
 // ---------- importação e exportação do histórico ----------
-const att = (over = {}) => ({ id: 'a1', examId: 'D1-S1', finishedAt: 1000, mode: 'exam', lang: 'pt', durationMs: 1, answers: { 1: [0] }, flags: [], correct: 40, total: 53, percent: 0.75, ...over });
+const att = (over = {}) => ({ id: 'a1', examId: 'DIA1-SIM1', finishedAt: 1000, mode: 'exam', lang: 'pt', durationMs: 1, answers: { 1: [0] }, flags: [], correct: 40, total: 53, percent: 0.75, ...over });
 
 test('store.importAttempts: devolve contadores (importadas, duplicadas, inválidas)', () => {
   localStorage.clear();
@@ -267,10 +267,10 @@ test('store.importAttempts: tentativa de treino sem a definição é recusada', 
 
 test('store.exportHistory -> importAttempts: ida e volta preserva treinos e tentativas', () => {
   localStorage.clear();
-  store.saveTrain({ id: 'TRAIN-abc1', title: 'D2', refs: [['D1-S1', 1], ['D1-S2', 2]], createdAt: 1 });
+  store.saveTrain({ id: 'TRAIN-abc1', title: 'D2', refs: [['DIA1-SIM1', 1], ['DIA1-SIM2', 2]], createdAt: 1 });
   store.addAttempt(att({ id: 'oficial' }));
   store.addAttempt(att({ id: 'treino', examId: 'TRAIN-abc1', finishedAt: 2000 }));
-  store.saveTrain({ id: 'TRAIN-solto', title: 'sem tentativa', refs: [['D1-S1', 3]], createdAt: 2 }); // será limpo: ninguém o usa
+  store.saveTrain({ id: 'TRAIN-solto', title: 'sem tentativa', refs: [['DIA1-SIM1', 3]], createdAt: 2 }); // será limpo: ninguém o usa
   const exported = JSON.parse(JSON.stringify(store.exportHistory()));
   assert.equal(exported.version, 2);
   assert.deepEqual(exported.trains.map((d) => d.id), ['TRAIN-abc1']); // só os treinos que alguma tentativa usa
@@ -278,7 +278,7 @@ test('store.exportHistory -> importAttempts: ida e volta preserva treinos e tent
   localStorage.clear(); // "outro navegador"
   const r = store.importAttempts(exported);
   assert.deepEqual([r.ok, r.imported, r.invalid], [true, 2, 0]);
-  assert.deepEqual(store.train('TRAIN-abc1').refs, [['D1-S1', 1], ['D1-S2', 2]]);
+  assert.deepEqual(store.train('TRAIN-abc1').refs, [['DIA1-SIM1', 1], ['DIA1-SIM2', 2]]);
   assert.equal(store.attempts().length, 2);
 });
 
@@ -289,8 +289,8 @@ test('store.importAttempts: formato antigo (lista) continua funcionando', () => 
 
 test('store.saveTrain: treino recém-criado (outra aba abrindo a sessão) não é apagado por outro treino', () => {
   localStorage.clear();
-  store.saveTrain({ id: 'TRAIN-aba1', title: 'a', refs: [['D1-S1', 1]], createdAt: Date.now() });
-  store.saveTrain({ id: 'TRAIN-aba2', title: 'b', refs: [['D1-S1', 2]], createdAt: Date.now() });
+  store.saveTrain({ id: 'TRAIN-aba1', title: 'a', refs: [['DIA1-SIM1', 1]], createdAt: Date.now() });
+  store.saveTrain({ id: 'TRAIN-aba2', title: 'b', refs: [['DIA1-SIM1', 2]], createdAt: Date.now() });
   assert.ok(store.train('TRAIN-aba1'));
   assert.ok(store.train('TRAIN-aba2'));
 });

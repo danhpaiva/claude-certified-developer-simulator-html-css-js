@@ -19,7 +19,7 @@ export const loadManifest = () =>
 
 const officialCache = new Map();
 export function loadOfficialExam(id) {
-  if (!/^D\d+-S\d+$/.test(id)) return Promise.reject(notFound('not found'));
+  if (!/^DIA\d+-SIM\d+$/.test(id)) return Promise.reject(notFound('not found'));
   if (!officialCache.has(id)) {
     officialCache.set(
       id,

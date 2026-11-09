@@ -72,6 +72,8 @@ Plain HTML, CSS and JavaScript. No frameworks, no bundler, no server.
 
 ## About the exam
 
+> **Naming:** "**Day N · Exam M**" is the study order (plan day and exam number within the day). **D1 to D8** are the blueprint *domains*. They are different things.
+
 The practice exams follow the **CCDV-F Exam Guide v1.0** (July 2026): 53 items in 120 minutes, single- and multiple-response, scaled score from 100 to 1,000 with a cut score of **720**. Each practice exam respects the domain weights:
 
 | Domain | Weight | Questions per exam |
@@ -153,8 +155,8 @@ assets/js/               ES modules: main (routes), home, exam, result, train, s
                          analysis and importer (pure, tested logic), scoring, store, i18n, rich, dom
 assets/icons/            PWA icons (PNG) and the SVG logo
 data/exams.json          manifest (domains, weights, exams, PDFs)
-data/exams/D1-S1.json    questions of each exam (PT + EN, answers, explanations)
-pdfs/D1/S1/              PDFs of each exam (exam and answer key, PT and EN)
+data/exams/DIA1-SIM1.json    questions of each exam (PT + EN, answers, explanations)
+pdfs/dia1/sim1/              PDFs of each exam (exam and answer key, PT and EN)
 scripts/                 validate-data, check-js, build, verify-build (CI and deploy);
                          generate-icons.py (builds the PNGs in assets/icons/, needs Pillow)
 docs/screenshots/        images used in this README
@@ -163,14 +165,14 @@ docs/screenshots/        images used in this README
 
 ## Add a new practice exam
 
-Practice exams are generated outside the site and exported in the repository format: data goes to `data/exams/Dn-Sm.json` and the `data/exams.json` manifest is updated with the new entry. PDFs are **optional**: if provided, they go to `pdfs/Dn/Sm/` and the `pdfs` field in the manifest points to them; otherwise the `pdfs` field is omitted and the site does not display the links row.
+Practice exams are generated outside the site and exported in the repository format: data goes to `data/exams/DIAn-SIMm.json` and the `data/exams.json` manifest is updated with the new entry. PDFs are **optional**: if provided, they go to `pdfs/diaN/simM/` and the `pdfs` field in the manifest points to them; otherwise the `pdfs` field is omitted and the site does not display the links row.
 
 After adding the files:
 
 ```bash
 npm test
 git add data pdfs   # or just data, if there are no PDFs
-git commit -m "feat: practice exam Dn-Sm"
+git commit -m "feat: practice exam DIAn-SIMm"
 ```
 
 The site reads the manifest and shows the new exam with no code changes.
@@ -179,7 +181,7 @@ The site reads the manifest and shows the new exam with no code changes.
 
 | Status | Item |
 | :---: | --- |
-| ✅ | Practice exams D1-S1, D1-S2 and D1-S3 (159 questions) in PT and EN |
+| ✅ | Day 1 practice exams (Exam 1, 2 and 3, 159 questions) in PT and EN |
 | ✅ | Static site with exam mode, study mode, history and PDFs |
 | ✅ | CI and deploy in separate workflows |
 | 🔜 | 14-day plan, up to 3 practice exams per day, with rising difficulty |
@@ -191,7 +193,7 @@ Everything runs in your browser. History and progress live only in the browser's
 
 ## Contributing and reporting errors
 
-Found a doubtful answer, an outdated explanation or a translation mistake? Open an issue with the **exam and question number** (for example, `D1-S2 Q20`) and, if possible, the documentation page that contradicts the item. Data fixes must pass `npm test` before the PR.
+Found a doubtful answer, an outdated explanation or a translation mistake? Open an issue with the **exam and question number** (for example, "Day 1 · Exam 2, question 20") and, if possible, the documentation page that contradicts the item. Data fixes must pass `npm test` before the PR.
 
 ## License
 
