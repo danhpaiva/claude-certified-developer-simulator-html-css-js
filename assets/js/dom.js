@@ -48,3 +48,22 @@ export function downloadJson(filename, data) {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
+
+export function uploadJson(callback) {
+  const input = h('input', { type: 'file', accept: 'application/json,.json' });
+  input.addEventListener('change', async () => {
+    const file = input.files?.[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+      callback(data);
+    } catch (error) {
+      alert(`Erro ao ler o arquivo: ${error.message}`);
+    } finally {
+      input.remove();
+    }
+  });
+  document.body.append(input);
+  input.click();
+}

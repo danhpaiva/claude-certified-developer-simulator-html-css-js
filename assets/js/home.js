@@ -1,4 +1,4 @@
-import { h, mount, downloadJson } from './dom.js';
+import { h, mount, downloadJson, uploadJson } from './dom.js';
 import { t, getLang } from './i18n.js';
 import { store } from './store.js';
 
@@ -123,6 +123,33 @@ export function renderHome(root, manifest, { go, rerender }) {
           'div',
           { class: 'actions' },
           h('button', { type: 'button', class: 'btn', onclick: () => downloadJson('ccdv-history.json', attempts) }, t('exportAll')),
+          h(
+            'button',
+            {
+              type: 'button',
+              class: 'btn',
+              onclick: () => {
+                uploadJson((data) => {
+                  try {
+                    const result = store.importAttempts(data);
+                    if (result.imported === 0 && result.duplicates === 0) {
+                      alert(t('importError'));
+                    } else {
+                      let msg = t('importSuccess', { count: result.imported });
+                      if (result.duplicates > 0) {
+                        msg += '\n' + t('importDuplicate', { count: result.duplicates });
+                      }
+                      alert(msg);
+                      rerender();
+                    }
+                  } catch (error) {
+                    alert(t('importError'));
+                  }
+                });
+              },
+            },
+            t('importAll'),
+          ),
           h(
             'button',
             {

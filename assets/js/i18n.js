@@ -41,6 +41,7 @@ const STRINGS = {
     colAction: 'Ações',
     review: 'Rever',
     exportAll: 'Exportar histórico (JSON)',
+    importAll: 'Importar histórico',
     clearHistory: 'Limpar histórico',
     clearHistoryConfirm: 'Apagar todo o histórico deste navegador?',
     // prova
@@ -130,6 +131,9 @@ const STRINGS = {
     domainStats: 'D{domain} · {name}',
     attemptsInDomain: '{correct} de {total} corretas',
     domainAverage: 'Média: {avg}',
+    importSuccess: '{count} tentativas importadas com sucesso.',
+    importError: 'Arquivo inválido ou formato incompatível.',
+    importDuplicate: '{count} tentativas já existentes foram ignoradas.',
   },
   en: {
     appTitle: 'CCDV-F Simulator',
@@ -173,6 +177,7 @@ const STRINGS = {
     colAction: 'Actions',
     review: 'Review',
     exportAll: 'Export history (JSON)',
+    importAll: 'Import history',
     clearHistory: 'Clear history',
     clearHistoryConfirm: 'Delete all history in this browser?',
     question: 'Question {n} of {total}',
@@ -260,6 +265,9 @@ const STRINGS = {
     domainStats: 'D{domain} · {name}',
     attemptsInDomain: '{correct} of {total} correct',
     domainAverage: 'Average: {avg}',
+    importSuccess: '{count} attempts imported successfully.',
+    importError: 'Invalid file or incompatible format.',
+    importDuplicate: '{count} duplicate attempts were skipped.',
   },
 };
 

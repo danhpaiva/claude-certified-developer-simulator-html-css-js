@@ -43,4 +43,32 @@ export const store = {
     return write('attempts', list.slice(0, 200));
   },
   clearAttempts: () => remove('attempts'),
+  
+  importAttempts(newAttempts) {
+    if (!Array.isArray(newAttempts)) return { imported: 0, duplicates: 0 };
+    
+    const current = read('attempts', []);
+    const existingIds = new Set(current.map((a) => a.id));
+    const toImport = [];
+    let duplicates = 0;
+    
+    // Valida e filtra duplicatas
+    for (const attempt of newAttempts) {
+      if (!attempt.id || !attempt.examId || !attempt.finishedAt) continue;
+      if (existingIds.has(attempt.id)) {
+        duplicates++;
+        continue;
+      }
+      toImport.push(attempt);
+    }
+    
+    // Mescla e ordena por data (mais recentes primeiro)
+    const merged = [...toImport, ...current]
+      .sort((a, b) => b.finishedAt - a.finishedAt)
+      .slice(0, 200);
+    
+    write('attempts', merged);
+    
+    return { imported: toImport.length, duplicates };
+  },
 };
