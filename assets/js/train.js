@@ -1,145 +1,95 @@
-import { h, mount, clear } from './dom.js';
-import { t, getLang } from './i18n.js';
+import { h, mount } from './dom.js';
+import { t } from './i18n.js';
 import { store } from './store.js';
+import { loadAllExams } from './exams.js';
+import { latestOutcomes, wrongKeys } from './analysis.js';
 
-// Tela de seleção de treino personalizado: por domínio ou só as erradas
+// Embaralha uma cópia (Fisher–Yates).
+function shuffle(array) {
+  const result = [...array];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
+
+// Cada treino tem um id próprio. Assim uma sessão abandonada nunca contamina um treino novo.
+const newTrainId = () => `TRAIN-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+
+// Tela de seleção de treino personalizado: por domínio ou só as erradas.
 export function renderTrain(root, manifest, go) {
-  const allExams = [];
-  
-  // Coleta todas as questões de todos os simulados
-  async function loadAllQuestions() {
-    const promises = manifest.exams.map(async (examMeta) => {
-      try {
-        const response = await fetch(`data/exams/${examMeta.id}.json`, { cache: 'no-cache' });
-        if (!response.ok) return null;
-        return await response.json();
-      } catch {
-        return null;
-      }
-    });
-    const exams = await Promise.all(promises);
-    return exams.filter((e) => e !== null);
-  }
+  const examsPromise = loadAllExams(manifest); // os simulados são baixados uma vez só
 
-  // Encontra todas as questões erradas em tentativas anteriores
-  function getWrongQuestions(allExams) {
-    const attempts = store.attempts();
-    const wrongSet = new Set();
-    
-    attempts.forEach((attempt) => {
-      const exam = allExams.find((e) => e.id === attempt.examId);
-      if (!exam) return;
-      
-      exam.questions.forEach((q) => {
-        const given = attempt.answers[q.num] || [];
-        const correct = [...q.answer].sort((a, b) => a - b);
-        const givenSorted = [...given].sort((a, b) => a - b);
-        const isCorrect = givenSorted.length === correct.length && givenSorted.every((v, i) => v === correct[i]);
-        
-        if (!isCorrect && given.length > 0) {
-          // Armazena como chave única: examId-questionNum
-          wrongSet.add(`${exam.id}-${q.num}`);
-        }
-      });
-    });
-    
-    return wrongSet;
-  }
-
-  // Monta a sessão de treino por domínios
-  function buildDomainTraining(domains, difficulty, allExams) {
-    const domainSet = new Set(domains);
-    let questions = [];
-    
-    allExams.forEach((exam) => {
-      exam.questions.forEach((q) => {
-        if (domainSet.has(q.domain)) {
-          if (difficulty === 'all' || q.difficulty === difficulty) {
-            questions.push({ ...q, sourceExamId: exam.id });
-          }
-        }
-      });
-    });
-    
-    // Embaralha as questões
-    questions = shuffle(questions);
-    
-    // Renumera
-    questions = questions.map((q, i) => ({ ...q, num: i + 1 }));
-    
-    return questions;
-  }
-
-  // Monta a sessão de treino só com questões erradas
-  function buildWrongOnlyTraining(wrongSet, allExams) {
-    let questions = [];
-    
-    allExams.forEach((exam) => {
-      exam.questions.forEach((q) => {
-        if (wrongSet.has(`${exam.id}-${q.num}`)) {
-          questions.push({ ...q, sourceExamId: exam.id });
-        }
-      });
-    });
-    
-    // Embaralha
-    questions = shuffle(questions);
-    
-    // Renumera
-    questions = questions.map((q, i) => ({ ...q, num: i + 1 }));
-    
-    return questions;
-  }
-
-  function shuffle(array) {
-    const result = [...array];
-    for (let i = result.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [result[i], result[j]] = [result[j], result[i]];
+  // Referências [idDoSimulado, númeroDaQuestão] das questões que passam no filtro, já embaralhadas.
+  function pickRefs(examsById, accept) {
+    const refs = [];
+    for (const exam of Object.values(examsById)) {
+      for (const q of exam.questions) if (accept(exam, q)) refs.push([exam.id, q.num]);
     }
-    return result;
+    return shuffle(refs);
   }
 
-  // Cria um exame sintético para o treino
-  function createTrainingExam(questions, title, id) {
-    return {
-      id,
-      day: 'TREINO',
-      set: title,
-      minutes: 120, // não usado no modo estudo
-      total: questions.length,
-      questions,
-    };
+  function startTraining(refs, title) {
+    const def = { id: newTrainId(), title, refs, createdAt: Date.now() };
+    store.saveTrain(def);
+    go(`#/exam/${def.id}?mode=study`);
   }
 
-  // UI: Treino por domínio
+  // ---------- treino por domínio ----------
   function renderDomainTraining() {
-    const selectedDomains = new Set();
+    const selected = new Set();
     let difficulty = 'all';
-    
-    const domainCheckboxes = Object.entries(manifest.domains).map(([d, info]) => {
-      const id = `domain-${d}`;
-      return h(
+    const countEl = h('p', { class: 'status', 'aria-live': 'polite' });
+    const startBtn = h('button', { type: 'button', class: 'btn btn-primary', disabled: true, onclick: start }, t('startTrain'));
+
+    const accept = (exam, q) => selected.has(q.domain) && (difficulty === 'all' || q.difficulty === difficulty);
+
+    async function updateCount() {
+      if (!selected.size) {
+        countEl.textContent = '';
+        startBtn.disabled = true;
+        return;
+      }
+      const count = pickRefs(await examsPromise, accept).length;
+      countEl.textContent = count ? t('questionsFound', { count }) : t('noQuestionsAvailable');
+      startBtn.disabled = count === 0;
+    }
+
+    async function start() {
+      startBtn.disabled = true;
+      const refs = pickRefs(await examsPromise, accept);
+      if (!refs.length) {
+        countEl.textContent = t('noQuestionsAvailable');
+        return;
+      }
+      const domains = [...selected].sort((a, b) => a - b).map((d) => `D${d}`).join('+');
+      startTraining(refs, domains + (difficulty === 'all' ? '' : ` (${difficulty})`));
+    }
+
+    const domainBoxes = Object.entries(manifest.domains).map(([d, info]) =>
+      h(
         'label',
         { class: 'checkbox-label' },
         h('input', {
           type: 'checkbox',
-          id,
+          id: `domain-${d}`,
           value: d,
           onchange: (e) => {
-            if (e.target.checked) selectedDomains.add(Number(d));
-            else selectedDomains.delete(Number(d));
+            if (e.target.checked) selected.add(Number(d));
+            else selected.delete(Number(d));
             updateCount();
           },
         }),
         h('span', {}, `D${d} · ${info.name}`),
-      );
-    });
+      ),
+    );
 
+    const levels = { all: 'difficultyAll', easy: 'difficultyEasy', medium: 'difficultyMedium', hard: 'difficultyHard' };
     const difficultyRadios = h(
       'div',
       { class: 'radio-group' },
-      ['all', 'easy', 'medium', 'hard'].map((level) =>
+      Object.entries(levels).map(([level, key]) =>
         h(
           'label',
           { class: 'radio-label' },
@@ -153,116 +103,54 @@ export function renderTrain(root, manifest, go) {
               updateCount();
             },
           }),
-          h('span', {}, level === 'all' ? t('difficultyAll') : level === 'easy' ? t('difficultyEasy') : level === 'medium' ? t('difficultyMedium') : t('difficultyHard')),
+          h('span', {}, t(key)),
         ),
       ),
     );
-
-    const countEl = h('p', { class: 'status' });
-    const startBtn = h('button', { type: 'button', class: 'btn btn-primary', disabled: true, onclick: startDomainTrain }, t('startTrain'));
-
-    async function updateCount() {
-      if (selectedDomains.size === 0) {
-        countEl.textContent = '';
-        startBtn.disabled = true;
-        return;
-      }
-      
-      countEl.textContent = t('loading');
-      const exams = await loadAllQuestions();
-      const questions = buildDomainTraining([...selectedDomains], difficulty, exams);
-      
-      if (questions.length === 0) {
-        countEl.textContent = t('noQuestionsAvailable');
-        startBtn.disabled = true;
-      } else {
-        countEl.textContent = t('questionsFound', { count: questions.length });
-        startBtn.disabled = false;
-      }
-    }
-
-    async function startDomainTrain() {
-      startBtn.disabled = true;
-      const exams = await loadAllQuestions();
-      const questions = buildDomainTraining([...selectedDomains], difficulty, exams);
-      
-      if (questions.length === 0) {
-        alert(t('noQuestionsAvailable'));
-        return;
-      }
-      
-      const domainList = [...selectedDomains].sort((a, b) => a - b).map((d) => `D${d}`).join('+');
-      const diffSuffix = difficulty === 'all' ? '' : `-${difficulty}`;
-      const trainId = `TRAIN-${domainList}${diffSuffix}`;
-      const title = domainList + (difficulty === 'all' ? '' : ` (${difficulty})`);
-      
-      const exam = createTrainingExam(questions, title, trainId);
-      
-      // Salva o exame sintético no cache (será usado pelo exam.js)
-      sessionStorage.setItem(`train:${trainId}`, JSON.stringify(exam));
-      
-      go(`#/exam/${trainId}?mode=study`);
-    }
 
     return h(
       'section',
       { class: 'train-option' },
       h('h3', {}, t('trainByDomain')),
       h('p', {}, t('trainByDomainDesc')),
-      h('fieldset', { class: 'domain-fieldset' }, h('legend', {}, t('selectDomains')), ...domainCheckboxes),
+      h('fieldset', { class: 'domain-fieldset' }, h('legend', {}, t('selectDomains')), ...domainBoxes),
       h('fieldset', { class: 'difficulty-fieldset' }, h('legend', {}, t('selectDifficulty')), difficultyRadios),
       countEl,
       startBtn,
     );
   }
 
-  // UI: Só as erradas
+  // ---------- só as erradas ----------
   function renderWrongOnlyTraining() {
-    const startBtn = h('button', { type: 'button', class: 'btn btn-primary', onclick: startWrongTrain }, t('startTrain'));
-    const countEl = h('p', { class: 'status' }, t('loading'));
+    const countEl = h('p', { class: 'status', 'aria-live': 'polite' }, t('loading'));
+    const startBtn = h('button', { type: 'button', class: 'btn btn-primary', disabled: true, onclick: start }, t('startTrain'));
 
-    async function init() {
-      const exams = await loadAllQuestions();
-      const wrongSet = getWrongQuestions(exams);
-      
-      if (wrongSet.size === 0) {
-        countEl.textContent = t('noWrongAnswers');
-        startBtn.disabled = true;
-      } else {
-        countEl.textContent = t('questionsFound', { count: wrongSet.size });
-        startBtn.disabled = false;
-      }
+    // Vale o resultado mais recente de cada questão: errou e depois acertou, sai da lista.
+    async function currentWrong() {
+      const examsById = await examsPromise;
+      return new Set(wrongKeys(latestOutcomes(store.attempts(), examsById, store.train)));
     }
 
-    async function startWrongTrain() {
+    async function init() {
+      const wrong = await currentWrong();
+      countEl.textContent = wrong.size ? t('questionsFound', { count: wrong.size }) : t('noWrongAnswers');
+      startBtn.disabled = wrong.size === 0;
+    }
+
+    async function start() {
       startBtn.disabled = true;
-      const exams = await loadAllQuestions();
-      const wrongSet = getWrongQuestions(exams);
-      const questions = buildWrongOnlyTraining(wrongSet, exams);
-      
-      if (questions.length === 0) {
-        alert(t('noWrongAnswers'));
+      const wrong = await currentWrong();
+      const refs = pickRefs(await examsPromise, (exam, q) => wrong.has(`${exam.id}#${q.num}`));
+      if (!refs.length) {
+        countEl.textContent = t('noWrongAnswers');
         return;
       }
-      
-      const trainId = 'TRAIN-WRONG';
-      const exam = createTrainingExam(questions, t('trainWrong'), trainId);
-      
-      sessionStorage.setItem(`train:${trainId}`, JSON.stringify(exam));
-      
-      go(`#/exam/${trainId}?mode=study`);
+      startTraining(refs, t('trainWrong'));
     }
 
     init();
-    
-    return h(
-      'section',
-      { class: 'train-option' },
-      h('h3', {}, t('trainWrongOnly')),
-      h('p', {}, t('trainWrongOnlyDesc')),
-      countEl,
-      startBtn,
-    );
+
+    return h('section', { class: 'train-option' }, h('h3', {}, t('trainWrongOnly')), h('p', {}, t('trainWrongOnlyDesc')), countEl, startBtn);
   }
 
   mount(

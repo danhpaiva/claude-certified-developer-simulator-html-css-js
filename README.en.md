@@ -3,7 +3,7 @@
 # CCDV-F Simulator
 
 **Practice exams for the Claude Certified Developer – Foundations**, in English and Portuguese.<br>
-Plain HTML, CSS and JavaScript. No frameworks, no build step, no server.
+Plain HTML, CSS and JavaScript. No frameworks, no bundler, no server.
 
 [![CI](https://github.com/danhpaiva/claude-certified-developer-simulator-html-css-js/actions/workflows/ci.yml/badge.svg)](https://github.com/danhpaiva/claude-certified-developer-simulator-html-css-js/actions/workflows/ci.yml)
 [![Deploy](https://github.com/danhpaiva/claude-certified-developer-simulator-html-css-js/actions/workflows/deploy.yml/badge.svg)](https://github.com/danhpaiva/claude-certified-developer-simulator-html-css-js/actions/workflows/deploy.yml)
@@ -13,7 +13,7 @@ Plain HTML, CSS and JavaScript. No frameworks, no build step, no server.
 ![HTML5](https://img.shields.io/badge/HTML5-E34F26?logo=html5&logoColor=white)
 ![CSS3](https://img.shields.io/badge/CSS3-1572B6?logo=css3&logoColor=white)
 ![JavaScript](https://img.shields.io/badge/JavaScript-ES%20Modules-F7DF1E?logo=javascript&logoColor=black)
-![Dependencies](https://img.shields.io/badge/dependencies-0-brightgreen)
+![Dependencies](https://img.shields.io/badge/runtime%20dependencies-0-brightgreen)
 ![Languages](https://img.shields.io/badge/languages-PT%20%7C%20EN-blue)
 
 [**Open the simulator →**](https://danhpaiva.github.io/claude-certified-developer-simulator-html-css-js/)
@@ -51,9 +51,10 @@ Plain HTML, CSS and JavaScript. No frameworks, no build step, no server.
 - **Question navigator**, flag for review, and keyboard shortcuts (`←` `→` navigate, `A`–`E` select, `F` flag).
 - **Result by domain**, using the official blueprint weights, with a filterable review (all, wrong, flagged, unanswered) and JSON export.
 - **Progress and history** saved in your browser. Close the tab and pick up later.
+- **Export and import the history** (JSON) to take your progress to another browser. Import validates the type and range of every field, recomputes percentages, drops duplicates and reports how many items were accepted, repeated or rejected.
 - **PDFs** of exam and answer key (PT and EN) for every practice exam, for offline study or printing.
 - **Light and dark theme**, responsive layout and keyboard navigation.
-- **Installable PWA:** works offline after first visit, with service worker that caches assets and data.
+- **Works offline:** after the first visit the site opens and the exams run without internet (service worker pre-caches the whole site). PDFs become available offline once opened.
 
 ## Screenshots
 
@@ -106,7 +107,7 @@ npm run serve
 # open http://localhost:8080
 ```
 
-If the browser keeps showing an old version after you edit a `.js` file, do a hard reload (`Ctrl+Shift+R`). There is no `npm install`: the project has no dependencies.
+If the browser keeps showing an old version after you edit a `.js` file, do a hard reload (`Ctrl+Shift+R`). Running the site needs no install. Only the tests use a development dependency (`jsdom`); install it with `npm ci`.
 
 ## Tests and validation
 
@@ -125,30 +126,37 @@ Two separate workflows:
 
 | Workflow | When it runs | What it does |
 | --- | --- | --- |
-| [`ci.yml`](.github/workflows/ci.yml) | PRs and pushes on any branch | `npm run check:js` and `npm run validate` |
-| [`deploy.yml`](.github/workflows/deploy.yml) | push to `main` or manual | validates, builds `_site/` and publishes to GitHub Pages |
+| [`ci.yml`](.github/workflows/ci.yml) | PRs and pushes on any branch | `check:js`, `validate`, unit tests, and `build` + `verify:build` |
+| [`deploy.yml`](.github/workflows/deploy.yml) | push to `main` or manual | `npm test`, `build`, `verify:build` and publishing to GitHub Pages |
 
 ```mermaid
 flowchart LR
-  A["push to develop<br/>or PR"] --> B["ci.yml<br/>check:js + validate"]
+  A["push to develop<br/>or PR"] --> B["ci.yml<br/>tests + build + verify"]
   B --> C{"PR approved"}
-  C -->|"merge to main"| D["deploy.yml<br/>npm test → _site"]
+  C -->|"merge to main"| D["deploy.yml<br/>tests → build → verify"]
   D --> E[("GitHub Pages")]
 ```
 
-One-time setup on GitHub: **Settings → Pages → Build and deployment → Source: GitHub Actions**. The published site includes only `index.html`, `assets/`, `data/` and `pdfs/`.
+One-time setup on GitHub: **Settings → Pages → Build and deployment → Source: GitHub Actions**. The published site includes only `index.html`, `assets/`, `data/`, `pdfs/`, the manifest, the service worker and the share image.
+
+**What `npm run build` does** (produces `_site/` without touching the source): versions the CSS, the manifest and **every** import between JS modules with `?v=<commit hash>`; writes the cache version and the offline pre-cache list into `sw.js`; and copies the `og:image` file. `npm run verify:build` checks the result (every referenced file exists, every URL is versioned, the pre-cache covers every module).
+
+**Testing offline locally:** the service worker is off on `localhost` so it does not hide your edits. To try it, run `npm run build`, serve the `_site/` folder and open `http://localhost:8080/index.html?sw=1`.
 
 ## Project structure
 
 ```
 index.html               single page, hash routes
 assets/style/main.css    styles (CSS tokens, dark theme, responsive)
-assets/js/               ES modules: main (routes), home, exam, result,
-                         question, scoring, store, i18n, rich, dom
+assets/js/               ES modules: main (routes), home, exam, result, train, stats,
+                         question, dialogs (accessible confirm/notice), exams (loading),
+                         analysis and importer (pure, tested logic), scoring, store, i18n, rich, dom
+assets/icons/            PWA icons (PNG) and the SVG logo
 data/exams.json          manifest (domains, weights, exams, PDFs)
 data/exams/D1-S1.json    questions of each exam (PT + EN, answers, explanations)
 pdfs/D1/S1/              PDFs of each exam (exam and answer key, PT and EN)
-scripts/                 validate-data.mjs and check-js.mjs (used by CI)
+scripts/                 validate-data, check-js, build, verify-build (CI and deploy);
+                         generate-icons.py (builds the PNGs in assets/icons/, needs Pillow)
 docs/screenshots/        images used in this README
 .github/workflows/       ci.yml and deploy.yml
 ```

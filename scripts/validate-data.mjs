@@ -3,6 +3,7 @@
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { shareImagePaths } from './site-paths.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const errors = [];
@@ -87,6 +88,36 @@ for (const [, attr, ref] of html.matchAll(/\b(href|src)="([^"#:]+)"/g)) {
 if (!existsSync(join(root, 'manifest.webmanifest'))) fail('manifest.webmanifest ausente');
 if (!existsSync(join(root, 'sw.js'))) fail('sw.js ausente');
 if (!html.includes('rel="manifest"')) fail('index.html sem link para manifest.webmanifest');
+
+// ---------- manifesto PWA: ícones reais e instalabilidade ----------
+const webmanifest = JSON.parse(readFileSync(join(root, 'manifest.webmanifest'), 'utf8'));
+for (const key of ['name', 'short_name', 'start_url', 'display', 'theme_color', 'background_color']) {
+  if (!webmanifest[key]) fail(`manifest.webmanifest sem "${key}"`);
+}
+if (!['standalone', 'fullscreen', 'minimal-ui'].includes(webmanifest.display)) fail('manifest: display deve ser standalone, fullscreen ou minimal-ui');
+const icons = webmanifest.icons || [];
+const pngSize = (file) => {
+  const bytes = readFileSync(file);
+  return bytes.toString('latin1', 1, 4) === 'PNG' ? [bytes.readUInt32BE(16), bytes.readUInt32BE(20)] : null;
+};
+for (const icon of icons) {
+  if (!icon.src || icon.src.startsWith('data:')) { fail('manifest: ícone deve ser um arquivo (data: URI não é aceito para instalar)'); continue; }
+  const file = join(root, icon.src);
+  if (!existsSync(file)) { fail(`manifest: ícone inexistente: ${icon.src}`); continue; }
+  const [w, h] = String(icon.sizes).split('x').map(Number);
+  const real = pngSize(file);
+  if (!real) fail(`manifest: ${icon.src} não é um PNG válido`);
+  else if (real[0] !== w || real[1] !== h) fail(`manifest: ${icon.src} declara ${icon.sizes} mas o arquivo tem ${real[0]}x${real[1]}`);
+}
+for (const [size, purpose] of [['192x192', 'any'], ['512x512', 'any'], ['512x512', 'maskable']]) {
+  if (!icons.some((i) => i.sizes === size && i.purpose === purpose)) fail(`manifest sem ícone ${size} (${purpose})`);
+}
+if (!html.includes('rel="apple-touch-icon"')) fail('index.html sem apple-touch-icon');
+
+// A imagem de compartilhamento (og:image/twitter:image) precisa existir; o build a copia para o site.
+const shareImages = shareImagePaths(html);
+if (!shareImages.length) fail('index.html sem og:image apontando para o próprio site');
+for (const rel of shareImages) if (!existsSync(join(root, rel))) fail(`og:image/twitter:image aponta para arquivo inexistente: ${rel}`);
 
 for (const required of ['<html lang=', 'name="viewport"', '<title>', 'id="app"', 'type="module"']) {
   if (!html.includes(required)) fail(`index.html sem ${required}`);

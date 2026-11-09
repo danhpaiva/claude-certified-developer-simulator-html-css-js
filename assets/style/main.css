@@ -717,3 +717,19 @@ kbd {
   font-weight: 600;
   box-shadow: 0 2px 0 var(--line);
 }
+
+/* ---------- pausa do cronômetro e subtítulos ---------- */
+.paused-panel {
+  display: grid; justify-items: center; gap: 8px; text-align: center;
+  padding: 48px 20px;
+  background: var(--surface); border: 1px dashed var(--accent); border-radius: var(--radius);
+}
+.paused-panel h2 { margin: 0; }
+.paused-panel p { max-width: 46ch; color: var(--muted); }
+.nav-btn:disabled { opacity: .45; cursor: not-allowed; }
+.stats-subtitle { margin-top: 3rem; }
+
+/* ---------- diálogos próprios (confirmação e aviso) ---------- */
+.dialog h3 { margin-top: 0; }
+.dialog-text { margin: 0 0 .5em; }
+.dialog-text:last-child { margin-bottom: 0; }
