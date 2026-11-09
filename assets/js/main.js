@@ -140,34 +140,23 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-// Registra o service worker para PWA offline
+// PWA offline: o service worker só entra no site publicado.
+// Em localhost ele fica desligado (senão o cache esconderia as edições nos .js); use ?sw=1 para testá-lo.
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').then(
-      (registration) => {
-        console.log('[SW] Registered:', registration.scope);
-        
-        // Verifica atualizações a cada 1 hora
-        setInterval(() => {
-          registration.update();
-        }, 60 * 60 * 1000);
-        
-        // Escuta novas versões
-        registration.addEventListener('updatefound', () => {
-          const newWorker = registration.installing;
-          if (newWorker) {
-            newWorker.addEventListener('statechange', () => {
-              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                console.log('[SW] New version available');
-                // Pode exibir um aviso ao usuário aqui, mas por ora só loga
-              }
-            });
-          }
-        });
-      },
-      (error) => {
-        console.log('[SW] Registration failed:', error);
+  const local = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
+  const wanted = !local || new URLSearchParams(location.search).has('sw');
+  window.addEventListener('load', async () => {
+    try {
+      if (wanted) {
+        const registration = await navigator.serviceWorker.register('./sw.js');
+        // procura versão nova ao voltar para a aba (além da checagem automática a cada navegação)
+        document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && registration.update());
+      } else {
+        for (const registration of await navigator.serviceWorker.getRegistrations()) await registration.unregister();
+        for (const name of await caches.keys()) if (name.startsWith('ccdv-')) await caches.delete(name);
       }
-    );
+    } catch (error) {
+      console.warn('[SW]', error);
+    }
   });
 }

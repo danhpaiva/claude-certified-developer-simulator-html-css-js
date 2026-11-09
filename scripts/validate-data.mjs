@@ -3,6 +3,7 @@
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { shareImagePaths } from './site-paths.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const errors = [];
@@ -87,6 +88,11 @@ for (const [, attr, ref] of html.matchAll(/\b(href|src)="([^"#:]+)"/g)) {
 if (!existsSync(join(root, 'manifest.webmanifest'))) fail('manifest.webmanifest ausente');
 if (!existsSync(join(root, 'sw.js'))) fail('sw.js ausente');
 if (!html.includes('rel="manifest"')) fail('index.html sem link para manifest.webmanifest');
+
+// A imagem de compartilhamento (og:image/twitter:image) precisa existir; o build a copia para o site.
+const shareImages = shareImagePaths(html);
+if (!shareImages.length) fail('index.html sem og:image apontando para o próprio site');
+for (const rel of shareImages) if (!existsSync(join(root, rel))) fail(`og:image/twitter:image aponta para arquivo inexistente: ${rel}`);
 
 for (const required of ['<html lang=', 'name="viewport"', '<title>', 'id="app"', 'type="module"']) {
   if (!html.includes(required)) fail(`index.html sem ${required}`);

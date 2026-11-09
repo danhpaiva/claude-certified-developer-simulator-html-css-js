@@ -1,127 +1,101 @@
-// Service Worker para o Simulador CCDV-F
-// Estratégia: stale-while-revalidate para assets e dados
-// A versão do cache é atualizada no deploy (substituir CACHE_VERSION com hash do commit)
+// Service Worker do Simulador CCDV-F (PWA offline).
+//
+// - O build troca CACHE_VERSION pelo hash do commit e preenche PRECACHE com todos os arquivos do site
+//   (menos PDFs, que são guardados quando abertos). Cada deploy tem o próprio cache.
+// - Ao ativar, os caches de versões anteriores são apagados.
+// - Pedidos versionados (?v=hash) só são servidos do cache se a versão for a deste service worker.
+//   Assim um index.html novo nunca recebe JS antigo.
 
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = 'dev';
 const CACHE_NAME = `ccdv-${CACHE_VERSION}`;
 
-// Assets estáticos essenciais (pré-cache no install)
-const STATIC_ASSETS = [
-  './',
-  './index.html',
-  './manifest.webmanifest',
-  './assets/style/main.css',
-  './assets/js/main.js',
-  './assets/js/dom.js',
-  './assets/js/i18n.js',
-  './assets/js/store.js',
-  './assets/js/home.js',
-  './assets/js/exam.js',
-  './assets/js/result.js',
-  './assets/js/question.js',
-  './assets/js/scoring.js',
-  './assets/js/rich.js',
-  './assets/js/train.js',
-  './assets/js/stats.js',
-  './data/exams.json',
-];
+// BUILD:PRECACHE_START
+const PRECACHE = [];
+// BUILD:PRECACHE_END
 
-// Padrões de URLs para cachear dinamicamente
-const DATA_PATTERN = /\/data\/exams\/.+\.json$/;
-const ASSET_PATTERN = /\/(assets|data)\//;
+// Caminhos do pré-cache são relativos ao próprio sw.js (no GitHub Pages o site vive em /nome-do-repo/).
+const abs = (path) => new URL(path, self.location.href).href;
 
-// Install: pré-cacheia os assets essenciais
 self.addEventListener('install', (event) => {
-  console.log('[SW] Installing...', CACHE_NAME);
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      console.log('[SW] Caching static assets');
-      return cache.addAll(STATIC_ASSETS);
-    }).then(() => {
-      console.log('[SW] Installed, skipping waiting');
-      return self.skipWaiting();
-    })
-  );
-});
-
-// Activate: limpa caches antigos
-self.addEventListener('activate', (event) => {
-  console.log('[SW] Activating...', CACHE_NAME);
-  event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName.startsWith('ccdv-') && cacheName !== CACHE_NAME) {
-            console.log('[SW] Deleting old cache:', cacheName);
-            return caches.delete(cacheName);
-          }
-        })
+    (async () => {
+      const cache = await caches.open(CACHE_NAME);
+      // cache: 'reload' ignora o cache HTTP: o pré-cache guarda exatamente os arquivos deste deploy.
+      await Promise.all(
+        PRECACHE.map(async (url) => {
+          const response = await fetch(new Request(abs(url), { cache: 'reload' }));
+          if (!response.ok) throw new Error(`${url}: ${response.status}`);
+          await cache.put(abs(url), response);
+        }),
       );
-    }).then(() => {
-      console.log('[SW] Activated, claiming clients');
-      return self.clients.claim();
-    })
+      await self.skipWaiting();
+    })(),
   );
 });
 
-// Fetch: stale-while-revalidate para assets e dados
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    (async () => {
+      for (const name of await caches.keys()) {
+        if (name.startsWith('ccdv-') && name !== CACHE_NAME) await caches.delete(name);
+      }
+      await self.clients.claim();
+    })(),
+  );
+});
+
 self.addEventListener('fetch', (event) => {
   const { request } = event;
-  const url = new URL(request.url);
-  
-  // Ignora requisições de outros domínios (exceto same-origin)
-  if (url.origin !== location.origin) {
-    return;
-  }
-  
-  // Ignora requisições que não sejam GET
-  if (request.method !== 'GET') {
-    return;
-  }
-  
-  // Estratégia: stale-while-revalidate
-  // Retorna do cache imediatamente, mas busca uma versão atualizada em background
-  event.respondWith(
-    caches.open(CACHE_NAME).then(async (cache) => {
-      const cached = await cache.match(request);
-      
-      const fetchPromise = fetch(request).then((response) => {
-        // Só cacheia respostas OK
-        if (response.ok) {
-          cache.put(request, response.clone());
-        }
-        return response;
-      }).catch((err) => {
-        console.log('[SW] Fetch failed, using cache:', url.pathname);
-        // Se a rede falhar e não houver cache, retorna erro
-        throw err;
-      });
-      
-      // Retorna o cache imediatamente, ou a rede se não houver cache
-      return cached || fetchPromise;
-    })
-  );
+  if (request.method !== 'GET' || new URL(request.url).origin !== self.location.origin) return;
+  if (request.headers.has('range')) return; // PDFs pedidos em partes: direto da rede (resposta 206 não é cacheável)
+  event.respondWith(request.mode === 'navigate' ? navigate(request) : asset(request, event));
 });
 
-// Message: comandos do cliente (ex: pular cache, forçar atualização)
+// Páginas: rede primeiro (sempre o HTML mais novo); sem rede, o index.html do pré-cache.
+async function navigate(request) {
+  try {
+    return await fetch(request);
+  } catch (error) {
+    const cache = await caches.open(CACHE_NAME);
+    const page = await cache.match(abs('./index.html'), { ignoreSearch: true });
+    if (page) return page;
+    throw error;
+  }
+}
+
+// Arquivos: cache primeiro. Sem ?v= (dados e PDFs) o cache é atualizado em segundo plano.
+async function asset(request, event) {
+  const cache = await caches.open(CACHE_NAME);
+  const version = new URL(request.url).searchParams.get('v');
+  const versioned = version !== null;
+
+  if (!versioned || version === CACHE_VERSION) {
+    const hit = await cache.match(request, { ignoreSearch: true });
+    if (hit) {
+      if (!versioned) event.waitUntil(refresh(cache, request));
+      return hit;
+    }
+  }
+  try {
+    const response = await fetch(request);
+    if (response.ok) event.waitUntil(cache.put(request, response.clone()));
+    return response;
+  } catch (error) {
+    const fallback = await cache.match(request, { ignoreSearch: true });
+    if (fallback) return fallback;
+    throw error;
+  }
+}
+
+async function refresh(cache, request) {
+  try {
+    const response = await fetch(request, { cache: 'no-cache' });
+    if (response.ok) await cache.put(request, response);
+  } catch {
+    /* offline: mantém o que já está no cache */
+  }
+}
+
 self.addEventListener('message', (event) => {
-  if (event.data.type === 'SKIP_WAITING') {
-    console.log('[SW] Skip waiting requested');
-    self.skipWaiting();
-  }
-  
-  if (event.data.type === 'CLEAR_CACHE') {
-    console.log('[SW] Clear cache requested');
-    event.waitUntil(
-      caches.keys().then((cacheNames) => {
-        return Promise.all(
-          cacheNames.map((cacheName) => {
-            if (cacheName.startsWith('ccdv-')) {
-              return caches.delete(cacheName);
-            }
-          })
-        );
-      })
-    );
-  }
+  if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
 });

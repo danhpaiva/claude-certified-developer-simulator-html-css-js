@@ -41,6 +41,9 @@ jobs:
       - name: Montar a pasta do site com cache-busting
         run: npm run build
 
+      - name: Verificar o site montado
+        run: npm run verify:build
+
       - name: Configurar Pages
         uses: actions/configure-pages@v5
 

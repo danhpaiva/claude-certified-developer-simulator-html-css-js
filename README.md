@@ -3,7 +3,7 @@
 # Simulador CCDV-F
 
 **Simulados para o Claude Certified Developer – Foundations**, em português e inglês.<br>
-HTML, CSS e JavaScript puros. Sem frameworks, sem build, sem servidor.
+HTML, CSS e JavaScript puros. Sem frameworks, sem bundler, sem servidor.
 
 [![CI](https://github.com/danhpaiva/claude-certified-developer-simulator-html-css-js/actions/workflows/ci.yml/badge.svg)](https://github.com/danhpaiva/claude-certified-developer-simulator-html-css-js/actions/workflows/ci.yml)
 [![Deploy](https://github.com/danhpaiva/claude-certified-developer-simulator-html-css-js/actions/workflows/deploy.yml/badge.svg)](https://github.com/danhpaiva/claude-certified-developer-simulator-html-css-js/actions/workflows/deploy.yml)
@@ -53,7 +53,7 @@ HTML, CSS e JavaScript puros. Sem frameworks, sem build, sem servidor.
 - **Andamento e histórico** salvos no navegador. Você pode fechar a aba e continuar depois.
 - **PDFs** de prova e gabarito (PT e EN) de cada simulado, para estudar offline ou imprimir.
 - **Tema claro e escuro**, layout responsivo e navegação por teclado.
-- **PWA instalável:** funciona offline após o primeiro acesso, com service worker que cacheia assets e dados.
+- **Funciona offline:** depois do primeiro acesso, o site abre e as provas rodam sem internet (service worker com pré-cache de todo o site). Os PDFs ficam disponíveis offline depois de abertos uma vez.
 
 ## Capturas de tela
 
@@ -125,18 +125,22 @@ Dois workflows separados:
 
 | Workflow | Quando roda | O que faz |
 | --- | --- | --- |
-| [`ci.yml`](.github/workflows/ci.yml) | PRs e pushes em qualquer branch | `npm run check:js` e `npm run validate` |
-| [`deploy.yml`](.github/workflows/deploy.yml) | push em `main` ou manual | valida, monta `_site/` e publica no GitHub Pages |
+| [`ci.yml`](.github/workflows/ci.yml) | PRs e pushes em qualquer branch | `check:js`, `validate`, testes unitários e `build` + `verify:build` |
+| [`deploy.yml`](.github/workflows/deploy.yml) | push em `main` ou manual | `npm test`, `build`, `verify:build` e publicação no GitHub Pages |
 
 ```mermaid
 flowchart LR
-  A["push em develop<br/>ou PR"] --> B["ci.yml<br/>check:js + validate"]
+  A["push em develop<br/>ou PR"] --> B["ci.yml<br/>testes + build + verify"]
   B --> C{"PR aprovado"}
-  C -->|"merge em main"| D["deploy.yml<br/>npm test → _site"]
+  C -->|"merge em main"| D["deploy.yml<br/>testes → build → verify"]
   D --> E[("GitHub Pages")]
 ```
 
-Configuração única no GitHub: **Settings → Pages → Build and deployment → Source: GitHub Actions**. O site publicado inclui apenas `index.html`, `assets/`, `data/` e `pdfs/`.
+Configuração única no GitHub: **Settings → Pages → Build and deployment → Source: GitHub Actions**. O site publicado inclui apenas `index.html`, `assets/`, `data/`, `pdfs/`, o manifesto, o service worker e a imagem de compartilhamento.
+
+**O que o `npm run build` faz** (gera `_site/` sem alterar o código-fonte): versiona com `?v=<hash do commit>` o CSS, o manifesto e **todos** os imports entre módulos JS; grava a versão do cache e a lista de pré-cache offline no `sw.js`; e copia a imagem do `og:image`. O `npm run verify:build` confere o resultado (todo arquivo referenciado existe, toda URL está versionada, o pré-cache cobre todos os módulos).
+
+**Testar o offline localmente:** o service worker fica desligado em `localhost` para não esconder suas edições. Para testá-lo, rode `npm run build`, sirva a pasta `_site/` e abra `http://localhost:8080/index.html?sw=1`.
 
 ## Estrutura do projeto
 
