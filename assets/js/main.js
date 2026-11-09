@@ -134,6 +134,54 @@ applyChrome();
 window.addEventListener('hashchange', route);
 route();
 
+// Modal de ajuda com atalhos
+const helpDialog = document.createElement('dialog');
+helpDialog.className = 'dialog help-dialog';
+document.body.append(helpDialog);
+
+function showHelp() {
+  clear(helpDialog);
+  helpDialog.append(
+    h('h2', {}, t('helpTitle')),
+    h('p', { style: 'margin-bottom: 1.5rem;' }, t('helpIntro')),
+    h('h3', {}, t('helpGlobal')),
+    h('ul', { class: 'help-list' }, 
+      h('li', {}, h('kbd', {}, '?'), ' — ', t('helpShortcuts.question')),
+      h('li', {}, h('kbd', {}, 'Alt+L'), ' — ', t('helpShortcuts.langSwitch')),
+      h('li', {}, h('kbd', {}, 'Alt+T'), ' — ', t('helpShortcuts.themeSwitch')),
+    ),
+    h('h3', {}, t('helpExam')),
+    h('ul', { class: 'help-list' },
+      h('li', {}, h('kbd', {}, '←'), ' ', h('kbd', {}, '→'), ' — ', t('helpShortcuts.navLeft').split(' —')[0], ' / ', t('helpShortcuts.navRight').split(' —')[0]),
+      h('li', {}, h('kbd', {}, 'A'), '–', h('kbd', {}, 'E'), ' — ', t('helpShortcuts.optionA').split(' —')[1]),
+      h('li', {}, h('kbd', {}, 'F'), ' — ', t('helpShortcuts.flag').split(' —')[1]),
+    ),
+    h('button', { type: 'button', class: 'btn btn-primary', onclick: () => helpDialog.close(), style: 'margin-top: 1.5rem;' }, t('helpClose')),
+  );
+  helpDialog.showModal();
+}
+
+// Atalhos globais
+document.addEventListener('keydown', (e) => {
+  // ? para ajuda
+  if (e.key === '?' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+    e.preventDefault();
+    showHelp();
+  }
+  
+  // Alt+L para idioma
+  if (e.key === 'l' && e.altKey) {
+    e.preventDefault();
+    document.getElementById('lang-toggle').click();
+  }
+  
+  // Alt+T para tema
+  if (e.key === 't' && e.altKey) {
+    e.preventDefault();
+    document.getElementById('theme-toggle').click();
+  }
+});
+
 // Registra o service worker para PWA offline
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {

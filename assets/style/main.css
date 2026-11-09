@@ -629,3 +629,91 @@ a:hover { text-decoration-thickness: 2px; }
     padding: 0.75rem 1.5rem;
   }
 }
+
+/* Estilos de impressão */
+@media print {
+  /* Esconde elementos de navegação */
+  .site-header,
+  .site-footer,
+  .exam-bar-actions,
+  .card-actions,
+  .actions,
+  .navigator,
+  .q-actions,
+  .crumbs,
+  .time-warning {
+    display: none !important;
+  }
+  
+  /* Ajusta cores para impressão */
+  :root {
+    --bg: white;
+    --surface: white;
+    --ink: black;
+    --muted: #666;
+    --line: #ccc;
+    --accent: #000;
+    --code-bg: #f5f5f5;
+    --code-ink: #000;
+  }
+  
+  /* Quebras de página */
+  .exam-card,
+  .review-item,
+  .domain-chart-row {
+    page-break-inside: avoid;
+  }
+  
+  h1, h2, h3 {
+    page-break-after: avoid;
+  }
+  
+  /* Compacta espaçamentos */
+  .container {
+    max-width: 100%;
+    padding: 0;
+  }
+  
+  /* Links visíveis */
+  a[href^="http"]::after {
+    content: " (" attr(href) ")";
+    font-size: 0.8em;
+    color: #666;
+  }
+  
+  /* Gráficos e barras */
+  .chart-container svg {
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+/* Modal de ajuda */
+.help-dialog {
+  max-width: 500px;
+}
+
+.help-list {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0;
+}
+
+.help-list li {
+  padding: 0.5rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+kbd {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  font-family: var(--mono);
+  font-size: 0.875em;
+  font-weight: 600;
+  box-shadow: 0 2px 0 var(--line);
+}
