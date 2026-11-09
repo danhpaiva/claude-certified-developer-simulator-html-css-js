@@ -200,3 +200,8 @@ service-account*.json
 .DS_Store
 Thumbs.db
 Desktop.ini
+
+# ---------------------------------------------------------------
+# Build output (gerado por npm run build)
+# ---------------------------------------------------------------
+_site/

@@ -35,11 +35,8 @@ jobs:
       - name: Validar antes de publicar
         run: npm test
 
-      - name: Montar a pasta do site (somente o que vai ao ar)
-        run: |
-          mkdir _site
-          cp -r index.html assets data pdfs _site/
-          touch _site/.nojekyll
+      - name: Montar a pasta do site com cache-busting
+        run: npm run build
 
       - name: Configurar Pages
         uses: actions/configure-pages@v5

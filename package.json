@@ -10,6 +10,7 @@
     "serve": "python -m http.server 8080",
     "check:js": "node scripts/check-js.mjs",
     "validate": "node scripts/validate-data.mjs",
-    "test": "npm run check:js && npm run validate"
+    "test": "npm run check:js && npm run validate",
+    "build": "node scripts/build.mjs"
   }
 }
