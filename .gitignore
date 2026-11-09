@@ -147,3 +147,56 @@ vite.config.ts.timestamp-*
 
 # Turbo Repo
 .turbo
+
+# ---------------------------------------------------------------
+# Ferramentas de IA / assistentes de código (config e memória locais)
+# ---------------------------------------------------------------
+.claude/
+CLAUDE.local.md
+.kiro/
+
+# ---------------------------------------------------------------
+# Segredos e credenciais (nunca versionar)
+# ---------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.crt
+*.cer
+id_rsa*
+id_ed25519*
+*.gpg
+*.kdbx
+.ssh/
+.aws/
+.azure/
+.gcloud/
+.secrets/
+secrets/
+secrets.*
+*.secret
+*.secrets
+credentials.json
+credentials.*.json
+client_secret*.json
+service-account*.json
+*serviceAccount*.json
+.npmrc
+.netrc
+.git-credentials
+*.tfvars
+*.tfstate
+*.tfstate.*
+
+# ---------------------------------------------------------------
+# Arquivos do sistema operacional
+# ---------------------------------------------------------------
+.DS_Store
+Thumbs.db
+Desktop.ini

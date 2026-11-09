@@ -1,0 +1,15 @@
+{
+  "name": "claude-certified-developer-simulator-html-css-js",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Simulador estático (HTML, CSS e JS puros) para o Claude Certified Developer – Foundations (CCDV-F).",
+  "type": "module",
+  "license": "MIT",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "serve": "python -m http.server 8080",
+    "check:js": "node scripts/check-js.mjs",
+    "validate": "node scripts/validate-data.mjs",
+    "test": "npm run check:js && npm run validate"
+  }
+}

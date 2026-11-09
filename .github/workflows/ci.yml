@@ -1,0 +1,35 @@
+name: CI
+
+# Integração contínua: valida sintaxe do JS e a consistência dos dados/PDFs.
+# Roda em PRs e em qualquer push (inclusive main, para o badge do README refletir a branch padrão).
+on:
+  pull_request:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validar JS e dados
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Sintaxe dos módulos JS
+        run: npm run check:js
+
+      - name: Dados, PDFs e index.html
+        run: npm run validate
