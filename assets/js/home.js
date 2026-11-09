@@ -111,6 +111,7 @@ export function renderHome(root, manifest, { go, rerender }) {
       'div',
       { class: 'actions', style: 'margin-bottom: 2rem;' },
       h('button', { type: 'button', class: 'btn btn-primary', onclick: () => go('#/train') }, '🎯 ' + t('trainTitle')),
+      attempts.length ? h('button', { type: 'button', class: 'btn', onclick: () => go('#/stats') }, '📊 ' + t('statsTitle')) : null,
     ),
     h('h2', {}, t('examsTitle')),
     h('div', { class: 'cards' }, cards),

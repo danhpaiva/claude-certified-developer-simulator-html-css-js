@@ -5,6 +5,7 @@ import { renderHome } from './home.js';
 import { renderExam } from './exam.js';
 import { renderResult, missingAttempt } from './result.js';
 import { renderTrain } from './train.js';
+import { renderStats } from './stats.js';
 
 const root = document.getElementById('app');
 let dispose = null;
@@ -67,6 +68,9 @@ async function route() {
     if (parts[0] === 'train') {
       const manifest = await loadManifest();
       view = () => renderTrain(root, manifest, go);
+    } else if (parts[0] === 'stats') {
+      const manifest = await loadManifest();
+      view = () => renderStats(root, manifest, go);
     } else if (parts[0] === 'exam' && parts[1]) {
       const [exam] = await Promise.all([loadExam(parts[1]), loadManifest()]);
       view = () => renderExam(root, exam, params.get('mode') === 'study' ? 'study' : 'exam', go);
