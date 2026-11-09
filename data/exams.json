@@ -102,6 +102,23 @@
     "en_exam": "pdfs/dia1/sim3/CCDV-F_Dia1_Sim3_EN_exam.pdf",
     "en_key": "pdfs/dia1/sim3/CCDV-F_Dia1_Sim3_EN_answer-key.pdf"
    }
+  },
+  {
+   "id": "DIA2-SIM1",
+   "day": 2,
+   "set": 1,
+   "total": 53,
+   "minutes": 120,
+   "domains": {
+    "1": 8,
+    "2": 17,
+    "3": 2,
+    "4": 1,
+    "5": 9,
+    "6": 6,
+    "7": 4,
+    "8": 6
+   }
   }
  ]
 }
