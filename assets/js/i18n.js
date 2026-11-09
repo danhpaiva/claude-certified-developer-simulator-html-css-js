@@ -160,6 +160,13 @@ const STRINGS = {
     weakItem: '{avg} de acerto · peso {weight}% · até {lost} p.p. da nota em jogo',
     legendRef: 'Referência de 72%',
     importReadError: 'Não foi possível ler o arquivo: {message}',
+    importTooLarge: 'O arquivo é grande demais (máximo de 2 MB).',
+    importInvalid: '{count} itens inválidos foram ignorados.',
+    importDropped: '{count} tentativas passaram do limite de 200 e não foram guardadas.',
+    dialogOk: 'OK',
+    dialogCancel: 'Cancelar',
+    dialogConfirmTitle: 'Confirmar',
+    dialogNoticeTitle: 'Aviso',
   },
   en: {
     appTitle: 'CCDV-F Simulator',
@@ -320,6 +327,13 @@ const STRINGS = {
     weakItem: '{avg} correct · weight {weight}% · up to {lost} pts of the score at stake',
     legendRef: '72% reference',
     importReadError: 'Could not read the file: {message}',
+    importTooLarge: 'The file is too large (2 MB maximum).',
+    importInvalid: '{count} invalid items were ignored.',
+    importDropped: '{count} attempts went over the 200 limit and were not stored.',
+    dialogOk: 'OK',
+    dialogCancel: 'Cancel',
+    dialogConfirmTitle: 'Confirm',
+    dialogNoticeTitle: 'Notice',
   },
 };
 

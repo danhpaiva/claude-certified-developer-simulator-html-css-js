@@ -224,3 +224,73 @@ test('store.clearAttempts: libera os treinos que só existiam por causa do hist�
   store.clearAttempts();
   assert.equal(store.train('TRAIN-h1'), null);
 });
+
+// ---------- importação e exportação do histórico ----------
+const att = (over = {}) => ({ id: 'a1', examId: 'D1-S1', finishedAt: 1000, mode: 'exam', lang: 'pt', durationMs: 1, answers: { 1: [0] }, flags: [], correct: 40, total: 53, percent: 0.75, ...over });
+
+test('store.importAttempts: devolve contadores (importadas, duplicadas, inválidas)', () => {
+  localStorage.clear();
+  store.addAttempt(att({ id: 'existente' }));
+  const r = store.importAttempts([att({ id: 'existente' }), att({ id: 'nova' }), { id: 'lixo' }, null]);
+  assert.deepEqual(r, { ok: true, imported: 1, duplicates: 1, invalid: 2, dropped: 0 });
+});
+
+test('store.importAttempts: conteúdo que não é histórico é recusado e nada é gravado', () => {
+  localStorage.clear();
+  for (const payload of [{ foo: 1 }, 'texto', 42, null]) assert.equal(store.importAttempts(payload).ok, false);
+  assert.deepEqual(store.attempts(), []);
+});
+
+test('store.importAttempts: grava só campos conhecidos e recalcula o percentual', () => {
+  localStorage.clear();
+  store.importAttempts([att({ percent: 5, hack: '<script>' })]);
+  const [saved] = store.attempts();
+  assert.equal(saved.hack, undefined);
+  assert.equal(saved.percent, 40 / 53);
+});
+
+test('store.importAttempts: respeita o limite de 200 e informa o que foi descartado', () => {
+  localStorage.clear();
+  const many = Array.from({ length: 230 }, (_, i) => att({ id: `m${i}`, finishedAt: 1000 + i }));
+  const r = store.importAttempts({ attempts: many.slice(0, 200) });
+  const r2 = store.importAttempts({ attempts: many.slice(200).map((a, i) => ({ ...a, finishedAt: 1 + i })) }); // mais antigas: ficam de fora
+  assert.equal(r.imported, 200);
+  assert.deepEqual([r2.imported, r2.dropped], [0, 30]);
+  assert.equal(store.attempts().length, 200);
+});
+
+test('store.importAttempts: tentativa de treino sem a definição é recusada', () => {
+  localStorage.clear();
+  const r = store.importAttempts([att({ id: 't1', examId: 'TRAIN-abc1' })]);
+  assert.deepEqual([r.imported, r.invalid], [0, 1]);
+});
+
+test('store.exportHistory -> importAttempts: ida e volta preserva treinos e tentativas', () => {
+  localStorage.clear();
+  store.saveTrain({ id: 'TRAIN-abc1', title: 'D2', refs: [['D1-S1', 1], ['D1-S2', 2]], createdAt: 1 });
+  store.addAttempt(att({ id: 'oficial' }));
+  store.addAttempt(att({ id: 'treino', examId: 'TRAIN-abc1', finishedAt: 2000 }));
+  store.saveTrain({ id: 'TRAIN-solto', title: 'sem tentativa', refs: [['D1-S1', 3]], createdAt: 2 }); // será limpo: ninguém o usa
+  const exported = JSON.parse(JSON.stringify(store.exportHistory()));
+  assert.equal(exported.version, 2);
+  assert.deepEqual(exported.trains.map((d) => d.id), ['TRAIN-abc1']); // só os treinos que alguma tentativa usa
+
+  localStorage.clear(); // "outro navegador"
+  const r = store.importAttempts(exported);
+  assert.deepEqual([r.ok, r.imported, r.invalid], [true, 2, 0]);
+  assert.deepEqual(store.train('TRAIN-abc1').refs, [['D1-S1', 1], ['D1-S2', 2]]);
+  assert.equal(store.attempts().length, 2);
+});
+
+test('store.importAttempts: formato antigo (lista) continua funcionando', () => {
+  localStorage.clear();
+  assert.equal(store.importAttempts([att({ id: 'velho' })]).imported, 1);
+});
+
+test('store.saveTrain: treino recém-criado (outra aba abrindo a sessão) não é apagado por outro treino', () => {
+  localStorage.clear();
+  store.saveTrain({ id: 'TRAIN-aba1', title: 'a', refs: [['D1-S1', 1]], createdAt: Date.now() });
+  store.saveTrain({ id: 'TRAIN-aba2', title: 'b', refs: [['D1-S1', 2]], createdAt: Date.now() });
+  assert.ok(store.train('TRAIN-aba1'));
+  assert.ok(store.train('TRAIN-aba2'));
+});

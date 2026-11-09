@@ -51,6 +51,7 @@ HTML, CSS e JavaScript puros. Sem frameworks, sem bundler, sem servidor.
 - **Navegador de questões**, marcação para revisão e atalhos de teclado (`←` `→` navegam, `A`–`E` marcam, `F` marca para revisão).
 - **Resultado por domínio**, com os pesos do blueprint oficial, revisão filtrável (todas, erradas, marcadas, sem resposta) e exportação em JSON.
 - **Andamento e histórico** salvos no navegador. Você pode fechar a aba e continuar depois.
+- **Exportar e importar o histórico** (JSON) para levar o progresso a outro navegador. A importação valida tipo e faixa de cada campo, recalcula os percentuais, descarta duplicatas e informa quantos itens foram aceitos, repetidos ou recusados.
 - **PDFs** de prova e gabarito (PT e EN) de cada simulado, para estudar offline ou imprimir.
 - **Tema claro e escuro**, layout responsivo e navegação por teclado.
 - **Funciona offline:** depois do primeiro acesso, o site abre e as provas rodam sem internet (service worker com pré-cache de todo o site). Os PDFs ficam disponíveis offline depois de abertos uma vez.
@@ -147,12 +148,15 @@ Configuração única no GitHub: **Settings → Pages → Build and deployment �
 ```
 index.html               página única, rotas por hash
 assets/style/main.css    estilos (tokens CSS, tema escuro, responsivo)
-assets/js/               módulos ES: main (rotas), home, exam, result,
-                         question, scoring, store, i18n, rich, dom
+assets/js/               módulos ES: main (rotas), home, exam, result, train, stats,
+                         question, dialogs (confirmação/aviso acessíveis), exams (carregamento),
+                         analysis e importer (lógica pura, testada), scoring, store, i18n, rich, dom
+assets/icons/            ícones do PWA (PNG) e o logo em SVG
 data/exams.json          manifesto (domínios, pesos, simulados, PDFs)
 data/exams/D1-S1.json    questões de cada simulado (PT + EN, respostas, explicações)
 pdfs/D1/S1/              PDFs de cada simulado (prova e gabarito, PT e EN)
-scripts/                 validate-data.mjs e check-js.mjs (usados pelo CI)
+scripts/                 validate-data, check-js, build, verify-build (CI e deploy);
+                         generate-icons.py (gera os PNGs de assets/icons/, requer Pillow)
 docs/screenshots/        imagens deste README
 .github/workflows/       ci.yml e deploy.yml
 ```

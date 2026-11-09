@@ -2,6 +2,7 @@ import { h, mount, downloadJson, uploadJson } from './dom.js';
 import { t, getLang } from './i18n.js';
 import { store } from './store.js';
 import { isTrainId } from './analysis.js';
+import { confirmDialog, notify } from './dialogs.js';
 
 const pct = (n) => `${Math.round(n * 100)}%`;
 
@@ -33,8 +34,8 @@ export function renderHome(root, manifest, { go, rerender }) {
               {
                 type: 'button',
                 class: 'btn btn-quiet',
-                onclick: () => {
-                  if (confirm(t('discardConfirm'))) {
+                onclick: async () => {
+                  if (await confirmDialog(t('discardConfirm'), { confirmLabel: t('discard'), danger: true })) {
                     store.clearSession(exam.id);
                     rerender();
                   }
@@ -80,8 +81,8 @@ export function renderHome(root, manifest, { go, rerender }) {
             {
               type: 'button',
               class: 'btn btn-quiet',
-              onclick: () => {
-                if (confirm(t('discardConfirm'))) {
+              onclick: async () => {
+                if (await confirmDialog(t('discardConfirm'), { confirmLabel: t('discard'), danger: true })) {
                   store.clearSession(def.id);
                   store.pruneTrains();
                   rerender();
@@ -94,24 +95,19 @@ export function renderHome(root, manifest, { go, rerender }) {
       ),
     );
 
-  const importBtn = h(
-    'button',
-    {
-      type: 'button',
-      class: 'btn',
-      onclick: () =>
-        uploadJson((data) => {
-          const result = store.importAttempts(data);
-          if (result.imported === 0 && result.duplicates === 0) {
-            alert(t('importError'));
-            return;
-          }
-          alert(t('importSuccess', { count: result.imported }) + (result.duplicates > 0 ? '\n' + t('importDuplicate', { count: result.duplicates }) : ''));
-          rerender();
-        }),
-    },
-    t('importAll'),
-  );
+  // Importar: valida o arquivo e conta o que entrou, o que era duplicado e o que foi recusado
+  async function runImport(data) {
+    const r = store.importAttempts(data);
+    const lines = [];
+    if (r.imported) lines.push(t('importSuccess', { count: r.imported }));
+    if (r.duplicates) lines.push(t('importDuplicate', { count: r.duplicates }));
+    if (r.invalid) lines.push(t('importInvalid', { count: r.invalid }));
+    if (r.dropped) lines.push(t('importDropped', { count: r.dropped }));
+    await notify(r.ok && lines.length ? lines.join('\n') : t('importError'));
+    if (r.imported) rerender();
+  }
+
+  const importBtn = h('button', { type: 'button', class: 'btn', onclick: () => uploadJson(runImport, notify) }, t('importAll'));
 
   const blueprint = h(
     'details',
@@ -176,7 +172,7 @@ export function renderHome(root, manifest, { go, rerender }) {
     h(
       'div',
       { class: 'actions' },
-      attempts.length ? h('button', { type: 'button', class: 'btn', onclick: () => downloadJson('ccdv-history.json', attempts) }, t('exportAll')) : null,
+      attempts.length ? h('button', { type: 'button', class: 'btn', onclick: () => downloadJson('ccdv-history.json', store.exportHistory()) }, t('exportAll')) : null,
       importBtn,
       attempts.length
         ? h(
@@ -184,8 +180,8 @@ export function renderHome(root, manifest, { go, rerender }) {
             {
               type: 'button',
               class: 'btn btn-quiet',
-              onclick: () => {
-                if (confirm(t('clearHistoryConfirm'))) {
+              onclick: async () => {
+                if (await confirmDialog(t('clearHistoryConfirm'), { confirmLabel: t('clearHistory'), danger: true })) {
                   store.clearAttempts();
                   rerender();
                 }

@@ -51,17 +51,19 @@ export function downloadJson(filename, data) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-export function uploadJson(callback) {
+const MAX_UPLOAD_BYTES = 2 * 1024 * 1024;
+
+// Abre o seletor de arquivo e entrega o JSON lido. Erros de leitura vão para onError (nada de alert aqui).
+export function uploadJson(onData, onError = () => {}) {
   const input = h('input', { type: 'file', accept: 'application/json,.json' });
   input.addEventListener('change', async () => {
     const file = input.files?.[0];
-    if (!file) return;
     try {
-      const text = await file.text();
-      const data = JSON.parse(text);
-      callback(data);
+      if (!file) return;
+      if (file.size > MAX_UPLOAD_BYTES) return onError(t('importTooLarge'));
+      onData(JSON.parse(await file.text()));
     } catch (error) {
-      alert(t('importReadError', { message: error.message }));
+      onError(t('importReadError', { message: error.message }));
     } finally {
       input.remove();
     }

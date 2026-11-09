@@ -56,8 +56,7 @@ for (const file of walk(join(siteDir, 'assets/js')).filter((f) => f.endsWith('.j
 }
 
 const html = sourceHtml
-  .replace(/href="(assets\/[^"?]+\.css)"/g, `href="$1?v=${hash}"`)
-  .replace(/src="(assets\/js\/[^"?]+\.js)"/g, `src="$1?v=${hash}"`)
+  .replace(/\b(href|src)="(assets\/[^"?]+)"/g, `$1="$2?v=${hash}"`) // CSS, JS e ícones
   .replace(/href="(manifest\.webmanifest)"/g, `href="$1?v=${hash}"`);
 writeFileSync(join(siteDir, 'index.html'), html);
 

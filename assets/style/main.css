@@ -728,3 +728,8 @@ kbd {
 .paused-panel p { max-width: 46ch; color: var(--muted); }
 .nav-btn:disabled { opacity: .45; cursor: not-allowed; }
 .stats-subtitle { margin-top: 3rem; }
+
+/* ---------- diálogos próprios (confirmação e aviso) ---------- */
+.dialog h3 { margin-top: 0; }
+.dialog-text { margin: 0 0 .5em; }
+.dialog-text:last-child { margin-bottom: 0; }
