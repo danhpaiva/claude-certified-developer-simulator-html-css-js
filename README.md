@@ -53,6 +53,7 @@ HTML, CSS e JavaScript puros. Sem frameworks, sem build, sem servidor.
 - **Andamento e histórico** salvos no navegador. Você pode fechar a aba e continuar depois.
 - **PDFs** de prova e gabarito (PT e EN) de cada simulado, para estudar offline ou imprimir.
 - **Tema claro e escuro**, layout responsivo e navegação por teclado.
+- **PWA instalável:** funciona offline após o primeiro acesso, com service worker que cacheia assets e dados.
 
 ## Capturas de tela
 

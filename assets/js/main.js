@@ -133,3 +133,35 @@ applyTheme(store.getPref('theme', null));
 applyChrome();
 window.addEventListener('hashchange', route);
 route();
+
+// Registra o service worker para PWA offline
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').then(
+      (registration) => {
+        console.log('[SW] Registered:', registration.scope);
+        
+        // Verifica atualizações a cada 1 hora
+        setInterval(() => {
+          registration.update();
+        }, 60 * 60 * 1000);
+        
+        // Escuta novas versões
+        registration.addEventListener('updatefound', () => {
+          const newWorker = registration.installing;
+          if (newWorker) {
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                console.log('[SW] New version available');
+                // Pode exibir um aviso ao usuário aqui, mas por ora só loga
+              }
+            });
+          }
+        });
+      },
+      (error) => {
+        console.log('[SW] Registration failed:', error);
+      }
+    );
+  });
+}

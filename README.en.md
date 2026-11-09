@@ -53,6 +53,7 @@ Plain HTML, CSS and JavaScript. No frameworks, no build step, no server.
 - **Progress and history** saved in your browser. Close the tab and pick up later.
 - **PDFs** of exam and answer key (PT and EN) for every practice exam, for offline study or printing.
 - **Light and dark theme**, responsive layout and keyboard navigation.
+- **Installable PWA:** works offline after first visit, with service worker that caches assets and data.
 
 ## Screenshots
 

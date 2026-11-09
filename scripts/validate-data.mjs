@@ -78,8 +78,16 @@ for (const f of readdirSync(join(root, 'data/exams'))) {
 const html = readFileSync(join(root, 'index.html'), 'utf8');
 for (const [, attr, ref] of html.matchAll(/\b(href|src)="([^"#:]+)"/g)) {
   if (ref.startsWith('data') || ref.startsWith('//')) continue;
+  // Manifesto e SW são verificados separadamente abaixo
+  if (ref === 'manifest.webmanifest' || ref === './sw.js') continue;
   if (!existsSync(join(root, ref))) fail(`index.html referencia arquivo inexistente (${attr}): ${ref}`);
 }
+
+// Manifesto PWA e Service Worker
+if (!existsSync(join(root, 'manifest.webmanifest'))) fail('manifest.webmanifest ausente');
+if (!existsSync(join(root, 'sw.js'))) fail('sw.js ausente');
+if (!html.includes('rel="manifest"')) fail('index.html sem link para manifest.webmanifest');
+
 for (const required of ['<html lang=', 'name="viewport"', '<title>', 'id="app"', 'type="module"']) {
   if (!html.includes(required)) fail(`index.html sem ${required}`);
 }
