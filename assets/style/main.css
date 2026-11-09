@@ -341,3 +341,379 @@ a:hover { text-decoration-thickness: 2px; }
   .site-header, .exam-bar, .exam-side, .q-actions, .actions, .chips { display: none; }
   body { background: #fff; color: #000; }
 }
+
+/* Página de treino */
+.train-option {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.train-option h3 { margin-top: 0; }
+
+.domain-fieldset, .difficulty-fieldset {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.domain-fieldset legend, .difficulty-fieldset legend {
+  padding: 0 0.5rem;
+  font-weight: 600;
+}
+
+.checkbox-label, .radio-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  cursor: pointer;
+}
+
+.checkbox-label input, .radio-label input {
+  cursor: pointer;
+}
+
+.radio-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+
+@media (max-width: 640px) {
+  .radio-group {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}
+
+/* Página de estatísticas */
+.stats-section {
+  margin-bottom: 3rem;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  color: var(--muted);
+  margin-bottom: 0.5rem;
+}
+
+.stat-value {
+  font-size: 2.5rem;
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: 1rem;
+}
+
+.stat-bar {
+  height: 8px;
+  background: var(--surface-2);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.stat-bar-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.stat-bar-best {
+  background: var(--ok);
+}
+
+.domain-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.domain-chart-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.domain-chart-label {
+  min-width: 280px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.domain-chart-bar {
+  flex: 1;
+  height: 32px;
+  background: var(--surface-2);
+  border-radius: 6px;
+  position: relative;
+  overflow: hidden;
+}
+
+.domain-chart-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 6px;
+  transition: width 0.3s ease;
+}
+
+.domain-chart-text {
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--ink);
+  z-index: 1;
+}
+
+.weakness-section {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: var(--warn-soft);
+  border: 1px solid var(--warn);
+  border-radius: var(--radius);
+}
+
+.weakness-section h3 {
+  margin-top: 0;
+  color: var(--warn);
+}
+
+.weakness-list {
+  margin: 1rem 0 0;
+  padding-left: 1.5rem;
+}
+
+.weakness-list li {
+  margin-bottom: 0.5rem;
+}
+
+.chart-container {
+  margin-top: 1.5rem;
+  overflow-x: auto;
+}
+
+.progress-chart {
+  max-width: 100%;
+  height: auto;
+}
+
+.chart-grid {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+
+.chart-label {
+  fill: var(--muted);
+  font-size: 12px;
+  font-family: var(--font);
+}
+
+.chart-reference {
+  stroke: var(--warn);
+  stroke-width: 2;
+  opacity: 0.6;
+}
+
+.chart-average {
+  stroke: var(--accent);
+  stroke-width: 2;
+  opacity: 0.6;
+}
+
+.chart-line {
+  stroke: var(--accent);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.chart-point {
+  fill: var(--accent);
+  stroke: var(--surface);
+  stroke-width: 2;
+}
+
+.chart-legend {
+  margin-top: 1rem;
+  display: flex;
+  gap: 2rem;
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.legend-ref {
+  color: var(--warn);
+}
+
+@media (max-width: 640px) {
+  .domain-chart-label {
+    min-width: 120px;
+    font-size: 0.75rem;
+  }
+
+  .domain-chart-text {
+    font-size: 0.65rem;
+  }
+
+  .stat-value {
+    font-size: 2rem;
+  }
+
+  .chart-legend {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}
+
+/* Botão de pausa no cronômetro */
+.btn-small {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+  margin-left: 0.5rem;
+}
+
+/* Aviso de tempo */
+.time-warning {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-100px);
+  background: var(--warn);
+  color: var(--ink);
+  padding: 1rem 2rem;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  font-weight: 600;
+  z-index: 1001;
+  opacity: 0;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  pointer-events: none;
+}
+
+.time-warning.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+@media (max-width: 640px) {
+  .time-warning {
+    top: 70px;
+    font-size: 0.875rem;
+    padding: 0.75rem 1.5rem;
+  }
+}
+
+/* Estilos de impressão */
+@media print {
+  /* Esconde elementos de navegação */
+  .site-header,
+  .site-footer,
+  .exam-bar-actions,
+  .card-actions,
+  .actions,
+  .navigator,
+  .q-actions,
+  .crumbs,
+  .time-warning {
+    display: none !important;
+  }
+  
+  /* Ajusta cores para impressão */
+  :root {
+    --bg: white;
+    --surface: white;
+    --ink: black;
+    --muted: #666;
+    --line: #ccc;
+    --accent: #000;
+    --code-bg: #f5f5f5;
+    --code-ink: #000;
+  }
+  
+  /* Quebras de página */
+  .exam-card,
+  .review-item,
+  .domain-chart-row {
+    page-break-inside: avoid;
+  }
+  
+  h1, h2, h3 {
+    page-break-after: avoid;
+  }
+  
+  /* Compacta espaçamentos */
+  .container {
+    max-width: 100%;
+    padding: 0;
+  }
+  
+  /* Links visíveis */
+  a[href^="http"]::after {
+    content: " (" attr(href) ")";
+    font-size: 0.8em;
+    color: #666;
+  }
+  
+  /* Gráficos e barras */
+  .chart-container svg {
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+/* Modal de ajuda */
+.help-dialog {
+  max-width: 500px;
+}
+
+.help-list {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0;
+}
+
+.help-list li {
+  padding: 0.5rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+kbd {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  font-family: var(--mono);
+  font-size: 0.875em;
+  font-weight: 600;
+  box-shadow: 0 2px 0 var(--line);
+}

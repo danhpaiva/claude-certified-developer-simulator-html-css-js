@@ -1,4 +1,4 @@
-import { h, mount, downloadJson } from './dom.js';
+import { h, mount, downloadJson, uploadJson } from './dom.js';
 import { t, getLang } from './i18n.js';
 import { store } from './store.js';
 
@@ -10,12 +10,6 @@ export function renderHome(root, manifest, { go, rerender }) {
   const cards = manifest.exams.map((exam) => {
     const session = store.session(exam.id);
     const last = attempts.find((a) => a.examId === exam.id);
-    const links = [
-      ['pt_exam', 'pdfPtExam'],
-      ['pt_key', 'pdfPtKey'],
-      ['en_exam', 'pdfEnExam'],
-      ['en_key', 'pdfEnKey'],
-    ].map(([key, label]) => h('a', { class: 'pdf-link', href: exam.pdfs[key], target: '_blank', rel: 'noopener' }, t(label)));
 
     return h(
       'article',
@@ -49,7 +43,20 @@ export function renderHome(root, manifest, { go, rerender }) {
             )
           : null,
       ),
-      h('div', { class: 'pdf-row' }, h('span', { class: 'pdf-label' }, t('pdfs')), links),
+      // só renderiza linha de PDFs se existir
+      exam.pdfs
+        ? h(
+            'div',
+            { class: 'pdf-row' },
+            h('span', { class: 'pdf-label' }, t('pdfs')),
+            [
+              ['pt_exam', 'pdfPtExam'],
+              ['pt_key', 'pdfPtKey'],
+              ['en_exam', 'pdfEnExam'],
+              ['en_key', 'pdfEnKey'],
+            ].map(([key, label]) => h('a', { class: 'pdf-link', href: exam.pdfs[key], target: '_blank', rel: 'noopener' }, t(label))),
+          )
+        : null,
     );
   });
 
@@ -100,6 +107,12 @@ export function renderHome(root, manifest, { go, rerender }) {
   mount(
     root,
     h('section', { class: 'hero' }, h('h1', { class: 'page-title' }, t('tagline')), h('p', { class: 'lede' }, t('modeExamHint') + ' ' + t('modeStudyHint'))),
+    h(
+      'div',
+      { class: 'actions', style: 'margin-bottom: 2rem;' },
+      h('button', { type: 'button', class: 'btn btn-primary', onclick: () => go('#/train') }, '🎯 ' + t('trainTitle')),
+      attempts.length ? h('button', { type: 'button', class: 'btn', onclick: () => go('#/stats') }, '📊 ' + t('statsTitle')) : null,
+    ),
     h('h2', {}, t('examsTitle')),
     h('div', { class: 'cards' }, cards),
     blueprint,
@@ -110,6 +123,33 @@ export function renderHome(root, manifest, { go, rerender }) {
           'div',
           { class: 'actions' },
           h('button', { type: 'button', class: 'btn', onclick: () => downloadJson('ccdv-history.json', attempts) }, t('exportAll')),
+          h(
+            'button',
+            {
+              type: 'button',
+              class: 'btn',
+              onclick: () => {
+                uploadJson((data) => {
+                  try {
+                    const result = store.importAttempts(data);
+                    if (result.imported === 0 && result.duplicates === 0) {
+                      alert(t('importError'));
+                    } else {
+                      let msg = t('importSuccess', { count: result.imported });
+                      if (result.duplicates > 0) {
+                        msg += '\n' + t('importDuplicate', { count: result.duplicates });
+                      }
+                      alert(msg);
+                      rerender();
+                    }
+                  } catch (error) {
+                    alert(t('importError'));
+                  }
+                });
+              },
+            },
+            t('importAll'),
+          ),
           h(
             'button',
             {

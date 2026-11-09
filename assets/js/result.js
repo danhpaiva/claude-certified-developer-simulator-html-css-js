@@ -104,7 +104,7 @@ export function renderResult(root, exam, manifest, attempt, { timeUp }, go) {
   mount(
     root,
     h('p', { class: 'crumbs' }, h('a', { href: '#/' }, '← ' + t('back'))),
-    h('h1', { class: 'page-title' }, t('resultTitle', { exam: t('examName', { day: exam.day, set: exam.set }) })),
+    h('h1', { class: 'page-title' }, t('resultTitle', { exam: exam.id.startsWith('TRAIN-') ? t('trainSessionName', { title: exam.set }) : t('examName', { day: exam.day, set: exam.set }) })),
     timeUp ? h('p', { class: 'notice', role: 'status' }, t('timeUp')) : null,
     h(
       'section',

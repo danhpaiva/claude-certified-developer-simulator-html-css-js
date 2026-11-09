@@ -4,6 +4,8 @@ import { store } from './store.js';
 import { renderHome } from './home.js';
 import { renderExam } from './exam.js';
 import { renderResult, missingAttempt } from './result.js';
+import { renderTrain } from './train.js';
+import { renderStats } from './stats.js';
 
 const root = document.getElementById('app');
 let dispose = null;
@@ -20,6 +22,19 @@ async function fetchJson(path) {
 const loadManifest = () => (manifestPromise ||= fetchJson('data/exams.json').catch((e) => ((manifestPromise = null), Promise.reject(e))));
 
 async function loadExam(id) {
+  // Verifica se é um exame de treino sintético
+  if (id.startsWith('TRAIN-')) {
+    const cached = sessionStorage.getItem(`train:${id}`);
+    if (cached) {
+      try {
+        return JSON.parse(cached);
+      } catch {
+        throw Object.assign(new Error('not found'), { notFound: true });
+      }
+    }
+    throw Object.assign(new Error('not found'), { notFound: true });
+  }
+  
   if (!/^D\d+-S\d+$/.test(id)) throw Object.assign(new Error('not found'), { notFound: true });
   if (!examCache.has(id)) {
     try {
@@ -50,7 +65,13 @@ async function route() {
   try {
     const { parts, params } = parseHash();
     let view;
-    if (parts[0] === 'exam' && parts[1]) {
+    if (parts[0] === 'train') {
+      const manifest = await loadManifest();
+      view = () => renderTrain(root, manifest, go);
+    } else if (parts[0] === 'stats') {
+      const manifest = await loadManifest();
+      view = () => renderStats(root, manifest, go);
+    } else if (parts[0] === 'exam' && parts[1]) {
       const [exam] = await Promise.all([loadExam(parts[1]), loadManifest()]);
       view = () => renderExam(root, exam, params.get('mode') === 'study' ? 'study' : 'exam', go);
     } else if (parts[0] === 'result' && parts[1]) {
@@ -112,3 +133,83 @@ applyTheme(store.getPref('theme', null));
 applyChrome();
 window.addEventListener('hashchange', route);
 route();
+
+// Modal de ajuda com atalhos
+const helpDialog = document.createElement('dialog');
+helpDialog.className = 'dialog help-dialog';
+document.body.append(helpDialog);
+
+function showHelp() {
+  clear(helpDialog);
+  helpDialog.append(
+    h('h2', {}, t('helpTitle')),
+    h('p', { style: 'margin-bottom: 1.5rem;' }, t('helpIntro')),
+    h('h3', {}, t('helpGlobal')),
+    h('ul', { class: 'help-list' }, 
+      h('li', {}, h('kbd', {}, '?'), ' — ', t('helpShortcuts.question')),
+      h('li', {}, h('kbd', {}, 'Alt+L'), ' — ', t('helpShortcuts.langSwitch')),
+      h('li', {}, h('kbd', {}, 'Alt+T'), ' — ', t('helpShortcuts.themeSwitch')),
+    ),
+    h('h3', {}, t('helpExam')),
+    h('ul', { class: 'help-list' },
+      h('li', {}, h('kbd', {}, '←'), ' ', h('kbd', {}, '→'), ' — ', t('helpShortcuts.navLeft').split(' —')[0], ' / ', t('helpShortcuts.navRight').split(' —')[0]),
+      h('li', {}, h('kbd', {}, 'A'), '–', h('kbd', {}, 'E'), ' — ', t('helpShortcuts.optionA').split(' —')[1]),
+      h('li', {}, h('kbd', {}, 'F'), ' — ', t('helpShortcuts.flag').split(' —')[1]),
+    ),
+    h('button', { type: 'button', class: 'btn btn-primary', onclick: () => helpDialog.close(), style: 'margin-top: 1.5rem;' }, t('helpClose')),
+  );
+  helpDialog.showModal();
+}
+
+// Atalhos globais
+document.addEventListener('keydown', (e) => {
+  // ? para ajuda
+  if (e.key === '?' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+    e.preventDefault();
+    showHelp();
+  }
+  
+  // Alt+L para idioma
+  if (e.key === 'l' && e.altKey) {
+    e.preventDefault();
+    document.getElementById('lang-toggle').click();
+  }
+  
+  // Alt+T para tema
+  if (e.key === 't' && e.altKey) {
+    e.preventDefault();
+    document.getElementById('theme-toggle').click();
+  }
+});
+
+// Registra o service worker para PWA offline
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').then(
+      (registration) => {
+        console.log('[SW] Registered:', registration.scope);
+        
+        // Verifica atualizações a cada 1 hora
+        setInterval(() => {
+          registration.update();
+        }, 60 * 60 * 1000);
+        
+        // Escuta novas versões
+        registration.addEventListener('updatefound', () => {
+          const newWorker = registration.installing;
+          if (newWorker) {
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                console.log('[SW] New version available');
+                // Pode exibir um aviso ao usuário aqui, mas por ora só loga
+              }
+            });
+          }
+        });
+      },
+      (error) => {
+        console.log('[SW] Registration failed:', error);
+      }
+    );
+  });
+}

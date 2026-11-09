@@ -7,17 +7,26 @@ import { optionList, explainBlock, selectHint } from './question.js';
 
 // Tela de prova. Retorna uma função dispose() para limpar timers e atalhos.
 export function renderExam(root, exam, requestedMode, go) {
+  // Treinos sempre rodam em modo estudo, sem cronômetro
+  const isTrain = exam.id.startsWith('TRAIN-');
+  const effectiveMode = isTrain ? 'study' : requestedMode;
+  
   let session = store.session(exam.id);
   if (!session) {
     const now = Date.now();
     session = {
-      mode: requestedMode,
+      mode: effectiveMode,
       startedAt: now,
-      deadline: requestedMode === 'exam' ? now + exam.minutes * 60000 : null,
+      deadline: effectiveMode === 'exam' ? now + exam.minutes * 60000 : null,
       answers: {},
       flags: [],
       checked: [],
       current: 0,
+      paused: false,
+      pausedAt: null,
+      totalPausedMs: 0,
+      warned10: false,
+      warned5: false,
     };
     store.saveSession(exam.id, session);
   }
@@ -26,6 +35,7 @@ export function renderExam(root, exam, requestedMode, go) {
   const save = () => store.saveSession(exam.id, session);
 
   const timerEl = h('span', { class: 'timer', role: 'timer' });
+  const pauseBtn = h('button', { type: 'button', class: 'btn btn-small', onclick: togglePause }, isStudy ? null : (session.paused ? t('resume') : t('pause')));
   const progressEl = h('span', { class: 'progress-text' });
   const cardHost = h('section', { class: 'q-host' });
   const navButtons = exam.questions.map((q, i) =>
@@ -39,8 +49,13 @@ export function renderExam(root, exam, requestedMode, go) {
   const topbar = h(
     'div',
     { class: 'exam-bar' },
-    h('div', { class: 'exam-bar-title' }, t('examName', { day: exam.day, set: exam.set }), h('span', { class: 'badge' }, isStudy ? t('modeStudy') : t('modeExam'))),
-    h('div', { class: 'exam-bar-timer' }, h('span', { class: 'timer-label' }, isStudy ? t('noTimer') : t('timeLeft')), isStudy ? null : timerEl),
+    h(
+      'div',
+      { class: 'exam-bar-title' },
+      exam.id.startsWith('TRAIN-') ? t('trainSessionName', { title: exam.set }) : t('examName', { day: exam.day, set: exam.set }),
+      h('span', { class: 'badge' }, isStudy ? t('modeStudy') : session.paused ? t('paused') : t('modeExam')),
+    ),
+    h('div', { class: 'exam-bar-timer' }, h('span', { class: 'timer-label' }, isStudy ? t('noTimer') : t('timeLeft')), isStudy ? null : timerEl, isStudy ? null : pauseBtn),
     h('div', { class: 'exam-bar-actions' }, progressEl, h('button', { type: 'button', class: 'btn btn-danger', onclick: askFinish }, t('finish'))),
   );
 
@@ -90,6 +105,28 @@ export function renderExam(root, exam, requestedMode, go) {
     else session.flags.push(num);
     save();
     refreshChrome();
+  }
+
+  function togglePause() {
+    if (isStudy) return; // modo estudo não tem cronômetro
+    
+    session.paused = !session.paused;
+    
+    if (session.paused) {
+      session.pausedAt = Date.now();
+    } else if (session.pausedAt) {
+      // Acumula o tempo pausado e estende o deadline
+      const pauseDuration = Date.now() - session.pausedAt;
+      session.totalPausedMs += pauseDuration;
+      if (session.deadline) {
+        session.deadline += pauseDuration;
+      }
+      session.pausedAt = null;
+    }
+    
+    save();
+    pauseBtn.textContent = session.paused ? t('resume') : t('pause');
+    topbar.querySelector('.badge').textContent = session.paused ? t('paused') : t('modeExam');
   }
 
   // ---------- renderização ----------
@@ -193,6 +230,12 @@ export function renderExam(root, exam, requestedMode, go) {
     };
     store.addAttempt(attempt);
     store.clearSession(exam.id);
+    
+    // Remove o exame de treino do sessionStorage após finalizar
+    if (exam.id.startsWith('TRAIN-')) {
+      sessionStorage.removeItem(`train:${exam.id}`);
+    }
+    
     go(`#/result/${attempt.id}${timeUp ? '?timeup=1' : ''}`);
   }
 
@@ -214,16 +257,47 @@ export function renderExam(root, exam, requestedMode, go) {
 
   // ---------- timer e atalhos ----------
   let tick = null;
+  const warningEl = h('div', { class: 'time-warning', role: 'alert', 'aria-live': 'assertive' });
+  root.prepend(warningEl);
+  
   if (!isStudy) {
     const update = () => {
+      if (session.paused) {
+        timerEl.textContent = formatTime(session.deadline - session.pausedAt);
+        timerEl.classList.remove('is-low');
+        return;
+      }
+      
       const left = session.deadline - Date.now();
       timerEl.textContent = formatTime(left);
       timerEl.classList.toggle('is-low', left < 5 * 60000);
+      
+      // Avisos
+      if (!session.warned10 && left <= 10 * 60000 && left > 9.5 * 60000) {
+        session.warned10 = true;
+        save();
+        showWarning(t('timeWarning10'));
+      }
+      if (!session.warned5 && left <= 5 * 60000 && left > 4.5 * 60000) {
+        session.warned5 = true;
+        save();
+        showWarning(t('timeWarning5'));
+      }
+      
       if (left <= 0) {
         clearInterval(tick);
         submit(true);
       }
     };
+    
+    function showWarning(message) {
+      warningEl.textContent = message;
+      warningEl.classList.add('show');
+      setTimeout(() => {
+        warningEl.classList.remove('show');
+      }, 5000);
+    }
+    
     update();
     tick = setInterval(update, 1000);
   }
