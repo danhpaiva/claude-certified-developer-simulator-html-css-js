@@ -60,9 +60,11 @@ for (const entry of manifest.exams) {
     if ((perDomain[d] || 0) !== count) fail(`${where} domínio D${d}: ${perDomain[d] || 0} questões, manifesto diz ${count}`);
   }
 
-  // PDFs referenciados existem
-  for (const [kind, path] of Object.entries(entry.pdfs || {})) {
-    if (!existsSync(join(root, path))) fail(`${where} PDF ausente (${kind}): ${path}`);
+  // PDFs referenciados existem (campo opcional)
+  if (entry.pdfs) {
+    for (const [kind, path] of Object.entries(entry.pdfs)) {
+      if (!existsSync(join(root, path))) fail(`${where} PDF ausente (${kind}): ${path}`);
+    }
   }
 }
 

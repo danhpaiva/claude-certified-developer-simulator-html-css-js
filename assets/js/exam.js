@@ -7,13 +7,17 @@ import { optionList, explainBlock, selectHint } from './question.js';
 
 // Tela de prova. Retorna uma função dispose() para limpar timers e atalhos.
 export function renderExam(root, exam, requestedMode, go) {
+  // Treinos sempre rodam em modo estudo, sem cronômetro
+  const isTrain = exam.id.startsWith('TRAIN-');
+  const effectiveMode = isTrain ? 'study' : requestedMode;
+  
   let session = store.session(exam.id);
   if (!session) {
     const now = Date.now();
     session = {
-      mode: requestedMode,
+      mode: effectiveMode,
       startedAt: now,
-      deadline: requestedMode === 'exam' ? now + exam.minutes * 60000 : null,
+      deadline: effectiveMode === 'exam' ? now + exam.minutes * 60000 : null,
       answers: {},
       flags: [],
       checked: [],
@@ -39,7 +43,12 @@ export function renderExam(root, exam, requestedMode, go) {
   const topbar = h(
     'div',
     { class: 'exam-bar' },
-    h('div', { class: 'exam-bar-title' }, t('examName', { day: exam.day, set: exam.set }), h('span', { class: 'badge' }, isStudy ? t('modeStudy') : t('modeExam'))),
+    h(
+      'div',
+      { class: 'exam-bar-title' },
+      exam.id.startsWith('TRAIN-') ? t('trainSessionName', { title: exam.set }) : t('examName', { day: exam.day, set: exam.set }),
+      h('span', { class: 'badge' }, isStudy ? t('modeStudy') : t('modeExam')),
+    ),
     h('div', { class: 'exam-bar-timer' }, h('span', { class: 'timer-label' }, isStudy ? t('noTimer') : t('timeLeft')), isStudy ? null : timerEl),
     h('div', { class: 'exam-bar-actions' }, progressEl, h('button', { type: 'button', class: 'btn btn-danger', onclick: askFinish }, t('finish'))),
   );
@@ -193,6 +202,12 @@ export function renderExam(root, exam, requestedMode, go) {
     };
     store.addAttempt(attempt);
     store.clearSession(exam.id);
+    
+    // Remove o exame de treino do sessionStorage após finalizar
+    if (exam.id.startsWith('TRAIN-')) {
+      sessionStorage.removeItem(`train:${exam.id}`);
+    }
+    
     go(`#/result/${attempt.id}${timeUp ? '?timeup=1' : ''}`);
   }
 

@@ -154,11 +154,13 @@ docs/screenshots/        imagens deste README
 
 ## Adicionar um novo simulado
 
-Os simulados são gerados fora do site e exportados no formato do repositório: os PDFs vão para `pdfs/Dn/Sm/` e os dados para `data/exams/Dn-Sm.json`, atualizando `data/exams.json`. Depois:
+Os simulados são gerados fora do site e exportados no formato do repositório: os dados vão para `data/exams/Dn-Sm.json` e o manifesto `data/exams.json` é atualizado com o novo item. Os PDFs são **opcionais**: se fornecidos, vão para `pdfs/Dn/Sm/` e o campo `pdfs` no manifesto aponta para eles; caso contrário, o campo `pdfs` é omitido e o site não exibe a linha de links.
+
+Depois de adicionar os arquivos:
 
 ```bash
 npm test
-git add data pdfs
+git add data pdfs   # ou só data, se não houver PDFs
 git commit -m "feat: simulado Dn-Sm"
 ```
 

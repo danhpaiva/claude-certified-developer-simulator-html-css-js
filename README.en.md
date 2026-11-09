@@ -154,11 +154,13 @@ docs/screenshots/        images used in this README
 
 ## Add a new practice exam
 
-Practice exams are generated outside the site and exported in the repository format: PDFs go to `pdfs/Dn/Sm/` and data to `data/exams/Dn-Sm.json`, updating `data/exams.json`. Then:
+Practice exams are generated outside the site and exported in the repository format: data goes to `data/exams/Dn-Sm.json` and the `data/exams.json` manifest is updated with the new entry. PDFs are **optional**: if provided, they go to `pdfs/Dn/Sm/` and the `pdfs` field in the manifest points to them; otherwise the `pdfs` field is omitted and the site does not display the links row.
+
+After adding the files:
 
 ```bash
 npm test
-git add data pdfs
+git add data pdfs   # or just data, if there are no PDFs
 git commit -m "feat: practice exam Dn-Sm"
 ```
 

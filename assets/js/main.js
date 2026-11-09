@@ -4,6 +4,7 @@ import { store } from './store.js';
 import { renderHome } from './home.js';
 import { renderExam } from './exam.js';
 import { renderResult, missingAttempt } from './result.js';
+import { renderTrain } from './train.js';
 
 const root = document.getElementById('app');
 let dispose = null;
@@ -20,6 +21,19 @@ async function fetchJson(path) {
 const loadManifest = () => (manifestPromise ||= fetchJson('data/exams.json').catch((e) => ((manifestPromise = null), Promise.reject(e))));
 
 async function loadExam(id) {
+  // Verifica se é um exame de treino sintético
+  if (id.startsWith('TRAIN-')) {
+    const cached = sessionStorage.getItem(`train:${id}`);
+    if (cached) {
+      try {
+        return JSON.parse(cached);
+      } catch {
+        throw Object.assign(new Error('not found'), { notFound: true });
+      }
+    }
+    throw Object.assign(new Error('not found'), { notFound: true });
+  }
+  
   if (!/^D\d+-S\d+$/.test(id)) throw Object.assign(new Error('not found'), { notFound: true });
   if (!examCache.has(id)) {
     try {
@@ -50,7 +64,10 @@ async function route() {
   try {
     const { parts, params } = parseHash();
     let view;
-    if (parts[0] === 'exam' && parts[1]) {
+    if (parts[0] === 'train') {
+      const manifest = await loadManifest();
+      view = () => renderTrain(root, manifest, go);
+    } else if (parts[0] === 'exam' && parts[1]) {
       const [exam] = await Promise.all([loadExam(parts[1]), loadManifest()]);
       view = () => renderExam(root, exam, params.get('mode') === 'study' ? 'study' : 'exam', go);
     } else if (parts[0] === 'result' && parts[1]) {
