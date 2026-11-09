@@ -32,6 +32,9 @@ jobs:
         with:
           node-version: 22
 
+      - name: Instalar dependências de desenvolvimento
+        run: npm install
+
       - name: Validar antes de publicar
         run: npm test
 

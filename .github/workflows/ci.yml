@@ -28,8 +28,14 @@ jobs:
         with:
           node-version: 22
 
+      - name: Instalar dependências de desenvolvimento
+        run: npm install
+
       - name: Sintaxe dos módulos JS
         run: npm run check:js
 
       - name: Dados, PDFs e index.html
         run: npm run validate
+
+      - name: Testes unitários
+        run: npm run test:unit
