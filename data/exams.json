@@ -1,0 +1,107 @@
+{
+ "domains": {
+  "1": {
+   "name": "Agents & Workflows",
+   "weight": 14.7
+  },
+  "2": {
+   "name": "Applications & Integration",
+   "weight": 33.1
+  },
+  "3": {
+   "name": "Claude Code",
+   "weight": 3.1
+  },
+  "4": {
+   "name": "Eval, Testing & Debugging",
+   "weight": 2.6
+  },
+  "5": {
+   "name": "Model Selection & Optimization",
+   "weight": 16.8
+  },
+  "6": {
+   "name": "Prompt & Context Engineering",
+   "weight": 11.0
+  },
+  "7": {
+   "name": "Security & Safety",
+   "weight": 8.1
+  },
+  "8": {
+   "name": "Tools & MCPs",
+   "weight": 10.6
+  }
+ },
+ "exams": [
+  {
+   "id": "D1-S1",
+   "day": "D1",
+   "set": "S1",
+   "total": 53,
+   "minutes": 120,
+   "domains": {
+    "1": 8,
+    "2": 17,
+    "3": 2,
+    "4": 1,
+    "5": 9,
+    "6": 6,
+    "7": 4,
+    "8": 6
+   },
+   "pdfs": {
+    "pt_exam": "pdfs/D1/S1/CCDV-F_D1_S1_PT_prova.pdf",
+    "pt_key": "pdfs/D1/S1/CCDV-F_D1_S1_PT_gabarito.pdf",
+    "en_exam": "pdfs/D1/S1/CCDV-F_D1_S1_EN_exam.pdf",
+    "en_key": "pdfs/D1/S1/CCDV-F_D1_S1_EN_answer-key.pdf"
+   }
+  },
+  {
+   "id": "D1-S2",
+   "day": "D1",
+   "set": "S2",
+   "total": 53,
+   "minutes": 120,
+   "domains": {
+    "1": 8,
+    "2": 17,
+    "3": 2,
+    "4": 1,
+    "5": 9,
+    "6": 6,
+    "7": 4,
+    "8": 6
+   },
+   "pdfs": {
+    "pt_exam": "pdfs/D1/S2/CCDV-F_D1_S2_PT_prova.pdf",
+    "pt_key": "pdfs/D1/S2/CCDV-F_D1_S2_PT_gabarito.pdf",
+    "en_exam": "pdfs/D1/S2/CCDV-F_D1_S2_EN_exam.pdf",
+    "en_key": "pdfs/D1/S2/CCDV-F_D1_S2_EN_answer-key.pdf"
+   }
+  },
+  {
+   "id": "D1-S3",
+   "day": "D1",
+   "set": "S3",
+   "total": 53,
+   "minutes": 120,
+   "domains": {
+    "1": 8,
+    "2": 17,
+    "3": 2,
+    "4": 1,
+    "5": 9,
+    "6": 6,
+    "7": 4,
+    "8": 6
+   },
+   "pdfs": {
+    "pt_exam": "pdfs/D1/S3/CCDV-F_D1_S3_PT_prova.pdf",
+    "pt_key": "pdfs/D1/S3/CCDV-F_D1_S3_PT_gabarito.pdf",
+    "en_exam": "pdfs/D1/S3/CCDV-F_D1_S3_EN_exam.pdf",
+    "en_key": "pdfs/D1/S3/CCDV-F_D1_S3_EN_answer-key.pdf"
+   }
+  }
+ ]
+}
