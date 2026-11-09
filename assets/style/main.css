@@ -591,3 +591,41 @@ a:hover { text-decoration-thickness: 2px; }
     gap: 0.5rem;
   }
 }
+
+/* Botão de pausa no cronômetro */
+.btn-small {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+  margin-left: 0.5rem;
+}
+
+/* Aviso de tempo */
+.time-warning {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-100px);
+  background: var(--warn);
+  color: var(--ink);
+  padding: 1rem 2rem;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  font-weight: 600;
+  z-index: 1001;
+  opacity: 0;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  pointer-events: none;
+}
+
+.time-warning.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+@media (max-width: 640px) {
+  .time-warning {
+    top: 70px;
+    font-size: 0.875rem;
+    padding: 0.75rem 1.5rem;
+  }
+}
