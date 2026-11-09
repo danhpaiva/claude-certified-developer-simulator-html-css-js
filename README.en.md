@@ -13,7 +13,7 @@ Plain HTML, CSS and JavaScript. No frameworks, no build step, no server.
 ![HTML5](https://img.shields.io/badge/HTML5-E34F26?logo=html5&logoColor=white)
 ![CSS3](https://img.shields.io/badge/CSS3-1572B6?logo=css3&logoColor=white)
 ![JavaScript](https://img.shields.io/badge/JavaScript-ES%20Modules-F7DF1E?logo=javascript&logoColor=black)
-![Dependencies](https://img.shields.io/badge/dependencies-0-brightgreen)
+![Dependencies](https://img.shields.io/badge/runtime%20dependencies-0-brightgreen)
 ![Languages](https://img.shields.io/badge/languages-PT%20%7C%20EN-blue)
 
 [**Open the simulator →**](https://danhpaiva.github.io/claude-certified-developer-simulator-html-css-js/)
@@ -106,7 +106,7 @@ npm run serve
 # open http://localhost:8080
 ```
 
-If the browser keeps showing an old version after you edit a `.js` file, do a hard reload (`Ctrl+Shift+R`). There is no `npm install`: the project has no dependencies.
+If the browser keeps showing an old version after you edit a `.js` file, do a hard reload (`Ctrl+Shift+R`). Running the site needs no install. Only the tests use a development dependency (`jsdom`); install it with `npm ci`.
 
 ## Tests and validation
 

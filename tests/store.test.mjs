@@ -192,3 +192,35 @@ test('store: tolera falhas de localStorage', () => {
   // Restaura
   localStorage.setItem = originalSetItem;
 });
+
+// ---------- treinos ----------
+test('store.saveTrain/train/trains: guarda a definição (só referências)', () => {
+  localStorage.clear();
+  const def = { id: 'TRAIN-a1', title: 'D2', refs: [['D1-S1', 1], ['D1-S2', 4]], createdAt: 1 };
+  store.saveTrain(def);
+  assert.deepEqual(store.train('TRAIN-a1'), def);
+  assert.equal(store.train('TRAIN-inexistente'), null);
+  assert.deepEqual(store.trains().map((d) => d.id), ['TRAIN-a1']); // o treino recém-criado não é apagado pela limpeza
+});
+
+test('store.pruneTrains: apaga treino sem sessão e sem tentativa; mantém os demais', () => {
+  localStorage.clear();
+  store.saveTrain({ id: 'TRAIN-velho', title: 'x', refs: [], createdAt: 1 });
+  store.saveTrain({ id: 'TRAIN-comsessao', title: 'y', refs: [], createdAt: 2 });
+  store.saveSession('TRAIN-comsessao', { mode: 'study' });
+  store.saveTrain({ id: 'TRAIN-comtentativa', title: 'z', refs: [], createdAt: 3 });
+  store.addAttempt({ id: 'a', examId: 'TRAIN-comtentativa', finishedAt: 1, correct: 0, total: 0, percent: 0 });
+  store.saveTrain({ id: 'TRAIN-novo', title: 'n', refs: [], createdAt: 4 });
+  assert.equal(store.train('TRAIN-velho'), null);
+  assert.ok(store.train('TRAIN-comsessao'));
+  assert.ok(store.train('TRAIN-comtentativa'));
+  assert.ok(store.train('TRAIN-novo'));
+});
+
+test('store.clearAttempts: libera os treinos que só existiam por causa do histórico', () => {
+  localStorage.clear();
+  store.saveTrain({ id: 'TRAIN-h1', title: 'h', refs: [], createdAt: 1 });
+  store.addAttempt({ id: 'h', examId: 'TRAIN-h1', finishedAt: 1, correct: 0, total: 0, percent: 0 });
+  store.clearAttempts();
+  assert.equal(store.train('TRAIN-h1'), null);
+});

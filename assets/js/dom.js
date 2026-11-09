@@ -1,3 +1,5 @@
+import { t } from './i18n.js';
+
 // Pequeno helper para montar DOM sem innerHTML (evita injeção e deixa o código legível).
 export function h(tag, attrs, ...children) {
   const el = document.createElement(tag);
@@ -59,7 +61,7 @@ export function uploadJson(callback) {
       const data = JSON.parse(text);
       callback(data);
     } catch (error) {
-      alert(`Erro ao ler o arquivo: ${error.message}`);
+      alert(t('importReadError', { message: error.message }));
     } finally {
       input.remove();
     }

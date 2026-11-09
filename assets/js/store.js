@@ -42,7 +42,29 @@ export const store = {
     list.unshift(attempt);
     return write('attempts', list.slice(0, 200));
   },
-  clearAttempts: () => remove('attempts'),
+  clearAttempts() {
+    remove('attempts');
+    this.pruneTrains();
+  },
+
+  // Treinos: só a definição (lista de referências às questões oficiais), nunca cópias das questões.
+  train: (id) => read('train.' + id, null),
+  trains: () => read('trains', []).map((id) => read('train.' + id, null)).filter(Boolean),
+  saveTrain(def) {
+    write('train.' + def.id, def);
+    write('trains', [def.id, ...read('trains', []).filter((id) => id !== def.id)]);
+    this.pruneTrains(def.id);
+  },
+  // Apaga treinos que não têm sessão em andamento nem tentativa registrada (nada mais depende deles).
+  pruneTrains(exceptId) {
+    const used = new Set(read('attempts', []).map((a) => a.examId));
+    const keep = [];
+    for (const id of read('trains', [])) {
+      if (id === exceptId || used.has(id) || read('session.' + id, null)) keep.push(id);
+      else remove('train.' + id);
+    }
+    write('trains', keep);
+  },
   
   importAttempts(newAttempts) {
     if (!Array.isArray(newAttempts)) return { imported: 0, duplicates: 0 };

@@ -6,46 +6,11 @@ import { renderExam } from './exam.js';
 import { renderResult, missingAttempt } from './result.js';
 import { renderTrain } from './train.js';
 import { renderStats } from './stats.js';
+import { loadManifest, loadExam } from './exams.js';
 
 const root = document.getElementById('app');
 let dispose = null;
 let token = 0;
-let manifestPromise = null;
-const examCache = new Map();
-
-async function fetchJson(path) {
-  const response = await fetch(path, { cache: 'no-cache' });
-  if (!response.ok) throw new Error(`${path}: ${response.status}`);
-  return response.json();
-}
-
-const loadManifest = () => (manifestPromise ||= fetchJson('data/exams.json').catch((e) => ((manifestPromise = null), Promise.reject(e))));
-
-async function loadExam(id) {
-  // Verifica se é um exame de treino sintético
-  if (id.startsWith('TRAIN-')) {
-    const cached = sessionStorage.getItem(`train:${id}`);
-    if (cached) {
-      try {
-        return JSON.parse(cached);
-      } catch {
-        throw Object.assign(new Error('not found'), { notFound: true });
-      }
-    }
-    throw Object.assign(new Error('not found'), { notFound: true });
-  }
-  
-  if (!/^D\d+-S\d+$/.test(id)) throw Object.assign(new Error('not found'), { notFound: true });
-  if (!examCache.has(id)) {
-    try {
-      examCache.set(id, await fetchJson(`data/exams/${id}.json`));
-    } catch (e) {
-      throw Object.assign(e, { notFound: true });
-    }
-  }
-  return examCache.get(id);
-}
-
 function parseHash() {
   const [path, query = ''] = (location.hash.slice(1) || '/').split('?');
   return { parts: path.split('/').filter(Boolean), params: new URLSearchParams(query) };
@@ -140,22 +105,15 @@ helpDialog.className = 'dialog help-dialog';
 document.body.append(helpDialog);
 
 function showHelp() {
+  const row = (keys, text) => h('li', {}, ...keys.flatMap((k, i) => (i ? [' ', h('kbd', {}, k)] : [h('kbd', {}, k)])), ' — ', t(text));
   clear(helpDialog);
   helpDialog.append(
     h('h2', {}, t('helpTitle')),
     h('p', { style: 'margin-bottom: 1.5rem;' }, t('helpIntro')),
     h('h3', {}, t('helpGlobal')),
-    h('ul', { class: 'help-list' }, 
-      h('li', {}, h('kbd', {}, '?'), ' — ', t('helpShortcuts.question')),
-      h('li', {}, h('kbd', {}, 'Alt+L'), ' — ', t('helpShortcuts.langSwitch')),
-      h('li', {}, h('kbd', {}, 'Alt+T'), ' — ', t('helpShortcuts.themeSwitch')),
-    ),
+    h('ul', { class: 'help-list' }, row(['?'], 'helpKeyHelp'), row(['Alt+L'], 'helpKeyLang'), row(['Alt+T'], 'helpKeyTheme')),
     h('h3', {}, t('helpExam')),
-    h('ul', { class: 'help-list' },
-      h('li', {}, h('kbd', {}, '←'), ' ', h('kbd', {}, '→'), ' — ', t('helpShortcuts.navLeft').split(' —')[0], ' / ', t('helpShortcuts.navRight').split(' —')[0]),
-      h('li', {}, h('kbd', {}, 'A'), '–', h('kbd', {}, 'E'), ' — ', t('helpShortcuts.optionA').split(' —')[1]),
-      h('li', {}, h('kbd', {}, 'F'), ' — ', t('helpShortcuts.flag').split(' —')[1]),
-    ),
+    h('ul', { class: 'help-list' }, row(['←', '→'], 'helpKeyNav'), row(['A–E'], 'helpKeyOptions'), row(['F'], 'helpKeyFlag')),
     h('button', { type: 'button', class: 'btn btn-primary', onclick: () => helpDialog.close(), style: 'margin-top: 1.5rem;' }, t('helpClose')),
   );
   helpDialog.showModal();

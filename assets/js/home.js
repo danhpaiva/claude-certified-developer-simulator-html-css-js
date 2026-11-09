@@ -1,6 +1,7 @@
 import { h, mount, downloadJson, uploadJson } from './dom.js';
 import { t, getLang } from './i18n.js';
 import { store } from './store.js';
+import { isTrainId } from './analysis.js';
 
 const pct = (n) => `${Math.round(n * 100)}%`;
 
@@ -60,6 +61,58 @@ export function renderHome(root, manifest, { go, rerender }) {
     );
   });
 
+  // Treinos iniciados e não finalizados: dá para continuar ou descartar
+  const trainCards = store
+    .trains()
+    .filter((def) => store.session(def.id))
+    .map((def) =>
+      h(
+        'article',
+        { class: 'exam-card' },
+        h('h3', {}, t('trainSessionName', { title: def.title })),
+        h('p', { class: 'meta' }, t('trainInProgress')),
+        h(
+          'div',
+          { class: 'card-actions' },
+          h('button', { type: 'button', class: 'btn btn-primary', onclick: () => go(`#/exam/${def.id}?mode=study`) }, t('resume', { mode: t('modeStudy') })),
+          h(
+            'button',
+            {
+              type: 'button',
+              class: 'btn btn-quiet',
+              onclick: () => {
+                if (confirm(t('discardConfirm'))) {
+                  store.clearSession(def.id);
+                  store.pruneTrains();
+                  rerender();
+                }
+              },
+            },
+            t('discard'),
+          ),
+        ),
+      ),
+    );
+
+  const importBtn = h(
+    'button',
+    {
+      type: 'button',
+      class: 'btn',
+      onclick: () =>
+        uploadJson((data) => {
+          const result = store.importAttempts(data);
+          if (result.imported === 0 && result.duplicates === 0) {
+            alert(t('importError'));
+            return;
+          }
+          alert(t('importSuccess', { count: result.imported }) + (result.duplicates > 0 ? '\n' + t('importDuplicate', { count: result.duplicates }) : ''));
+          rerender();
+        }),
+    },
+    t('importAll'),
+  );
+
   const blueprint = h(
     'details',
     { class: 'blueprint' },
@@ -73,6 +126,7 @@ export function renderHome(root, manifest, { go, rerender }) {
   );
 
   const examName = (id) => {
+    if (isTrainId(id)) return t('trainSessionName', { title: store.train(id)?.title ?? id });
     const e = manifest.exams.find((x) => x.id === id);
     return e ? t('examName', { day: e.day, set: e.set }) : id;
   };
@@ -114,43 +168,18 @@ export function renderHome(root, manifest, { go, rerender }) {
       attempts.length ? h('button', { type: 'button', class: 'btn', onclick: () => go('#/stats') }, '📊 ' + t('statsTitle')) : null,
     ),
     h('h2', {}, t('examsTitle')),
-    h('div', { class: 'cards' }, cards),
+    h('div', { class: 'cards' }, cards, trainCards),
     blueprint,
     h('h2', {}, t('historyTitle')),
     history,
-    attempts.length
-      ? h(
-          'div',
-          { class: 'actions' },
-          h('button', { type: 'button', class: 'btn', onclick: () => downloadJson('ccdv-history.json', attempts) }, t('exportAll')),
-          h(
-            'button',
-            {
-              type: 'button',
-              class: 'btn',
-              onclick: () => {
-                uploadJson((data) => {
-                  try {
-                    const result = store.importAttempts(data);
-                    if (result.imported === 0 && result.duplicates === 0) {
-                      alert(t('importError'));
-                    } else {
-                      let msg = t('importSuccess', { count: result.imported });
-                      if (result.duplicates > 0) {
-                        msg += '\n' + t('importDuplicate', { count: result.duplicates });
-                      }
-                      alert(msg);
-                      rerender();
-                    }
-                  } catch (error) {
-                    alert(t('importError'));
-                  }
-                });
-              },
-            },
-            t('importAll'),
-          ),
-          h(
+    // Importar fica sempre disponível (num navegador novo ainda não há histórico para exportar ou limpar)
+    h(
+      'div',
+      { class: 'actions' },
+      attempts.length ? h('button', { type: 'button', class: 'btn', onclick: () => downloadJson('ccdv-history.json', attempts) }, t('exportAll')) : null,
+      importBtn,
+      attempts.length
+        ? h(
             'button',
             {
               type: 'button',
@@ -163,8 +192,8 @@ export function renderHome(root, manifest, { go, rerender }) {
               },
             },
             t('clearHistory'),
-          ),
-        )
-      : null,
+          )
+        : null,
+    ),
   );
 }

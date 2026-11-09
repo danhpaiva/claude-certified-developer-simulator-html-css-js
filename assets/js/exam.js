@@ -4,11 +4,12 @@ import { store } from './store.js';
 import { rich } from './rich.js';
 import { grade, isCorrect, LETTERS } from './scoring.js';
 import { optionList, explainBlock, selectHint } from './question.js';
+import { isTrainId } from './analysis.js';
 
 // Tela de prova. Retorna uma função dispose() para limpar timers e atalhos.
 export function renderExam(root, exam, requestedMode, go) {
   // Treinos sempre rodam em modo estudo, sem cronômetro
-  const isTrain = exam.id.startsWith('TRAIN-');
+  const isTrain = isTrainId(exam.id);
   const effectiveMode = isTrain ? 'study' : requestedMode;
   
   let session = store.session(exam.id);
@@ -35,7 +36,7 @@ export function renderExam(root, exam, requestedMode, go) {
   const save = () => store.saveSession(exam.id, session);
 
   const timerEl = h('span', { class: 'timer', role: 'timer' });
-  const pauseBtn = h('button', { type: 'button', class: 'btn btn-small', onclick: togglePause }, isStudy ? null : (session.paused ? t('resume') : t('pause')));
+  const pauseBtn = h('button', { type: 'button', class: 'btn btn-small', onclick: togglePause }, isStudy ? null : (session.paused ? t('resumeTimer') : t('pause')));
   const progressEl = h('span', { class: 'progress-text' });
   const cardHost = h('section', { class: 'q-host' });
   const navButtons = exam.questions.map((q, i) =>
@@ -52,7 +53,7 @@ export function renderExam(root, exam, requestedMode, go) {
     h(
       'div',
       { class: 'exam-bar-title' },
-      exam.id.startsWith('TRAIN-') ? t('trainSessionName', { title: exam.set }) : t('examName', { day: exam.day, set: exam.set }),
+      isTrain ? t('trainSessionName', { title: exam.set }) : t('examName', { day: exam.day, set: exam.set }),
       h('span', { class: 'badge' }, isStudy ? t('modeStudy') : session.paused ? t('paused') : t('modeExam')),
     ),
     h('div', { class: 'exam-bar-timer' }, h('span', { class: 'timer-label' }, isStudy ? t('noTimer') : t('timeLeft')), isStudy ? null : timerEl, isStudy ? null : pauseBtn),
@@ -125,12 +126,23 @@ export function renderExam(root, exam, requestedMode, go) {
     }
     
     save();
-    pauseBtn.textContent = session.paused ? t('resume') : t('pause');
+    pauseBtn.textContent = session.paused ? t('resumeTimer') : t('pause');
     topbar.querySelector('.badge').textContent = session.paused ? t('paused') : t('modeExam');
+    renderCard();
+    refreshChrome();
   }
 
   // ---------- renderização ----------
+  const isPaused = () => !isStudy && session.paused;
+
   function renderCard() {
+    if (isPaused()) {
+      clear(cardHost);
+      cardHost.append(
+        h('div', { class: 'paused-panel', role: 'status' }, h('h2', {}, t('pausedTitle')), h('p', {}, t('pausedHint')), h('button', { type: 'button', class: 'btn btn-primary', onclick: togglePause }, t('resumeTimer'))),
+      );
+      return;
+    }
     const q = currentQ();
     const copy = q[getLang()];
     const given = session.answers[q.num] || [];
@@ -205,8 +217,11 @@ export function renderExam(root, exam, requestedMode, go) {
       if (i === session.current) btn.setAttribute('aria-current', 'true');
       else btn.removeAttribute('aria-current');
     });
-    prevBtn.disabled = session.current === 0;
-    nextBtn.disabled = session.current === total - 1;
+    const locked = isPaused();
+    navButtons.forEach((btn) => (btn.disabled = locked));
+    prevBtn.disabled = locked || session.current === 0;
+    nextBtn.disabled = locked || session.current === total - 1;
+    flagBtn.disabled = locked;
     const flagged = session.flags.includes(currentQ().num);
     flagBtn.textContent = (flagged ? '⚑ ' : '⚐ ') + (flagged ? t('unflag') : t('flag'));
     flagBtn.setAttribute('aria-pressed', String(flagged));
@@ -221,7 +236,7 @@ export function renderExam(root, exam, requestedMode, go) {
       finishedAt: Date.now(),
       mode: session.mode,
       lang: getLang(),
-      durationMs: Date.now() - session.startedAt,
+      durationMs: Math.max(0, Date.now() - session.startedAt - (session.totalPausedMs || 0) - (session.paused && session.pausedAt ? Date.now() - session.pausedAt : 0)),
       answers: session.answers,
       flags: session.flags,
       correct: g.correct,
@@ -230,12 +245,7 @@ export function renderExam(root, exam, requestedMode, go) {
     };
     store.addAttempt(attempt);
     store.clearSession(exam.id);
-    
-    // Remove o exame de treino do sessionStorage após finalizar
-    if (exam.id.startsWith('TRAIN-')) {
-      sessionStorage.removeItem(`train:${exam.id}`);
-    }
-    
+
     go(`#/result/${attempt.id}${timeUp ? '?timeup=1' : ''}`);
   }
 
@@ -272,16 +282,16 @@ export function renderExam(root, exam, requestedMode, go) {
       timerEl.textContent = formatTime(left);
       timerEl.classList.toggle('is-low', left < 5 * 60000);
       
-      // Avisos
-      if (!session.warned10 && left <= 10 * 60000 && left > 9.5 * 60000) {
+      // Avisos: um por limite, mesmo que o navegador tenha atrasado o timer (aba em segundo plano)
+      if (left <= 5 * 60000 && !session.warned5 && left > 0) {
+        session.warned5 = true;
+        session.warned10 = true;
+        save();
+        showWarning(t('timeWarning5'));
+      } else if (left <= 10 * 60000 && left > 5 * 60000 && !session.warned10) {
         session.warned10 = true;
         save();
         showWarning(t('timeWarning10'));
-      }
-      if (!session.warned5 && left <= 5 * 60000 && left > 4.5 * 60000) {
-        session.warned5 = true;
-        save();
-        showWarning(t('timeWarning5'));
       }
       
       if (left <= 0) {
@@ -303,7 +313,7 @@ export function renderExam(root, exam, requestedMode, go) {
   }
 
   function onKey(event) {
-    if (dialog.open || event.ctrlKey || event.metaKey || event.altKey) return;
+    if (dialog.open || isPaused() || event.ctrlKey || event.metaKey || event.altKey) return;
     if (event.target instanceof HTMLElement && event.target.closest('a, textarea, select')) return;
     const key = event.key.toLowerCase();
     if (key === 'arrowright') goTo(session.current + 1);
