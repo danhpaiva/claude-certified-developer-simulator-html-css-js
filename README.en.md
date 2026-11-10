@@ -150,7 +150,7 @@ One-time setup on GitHub: **Settings → Pages → Build and deployment → Sour
 ```
 index.html               single page, hash routes
 assets/style/main.css    styles (CSS tokens, dark theme, responsive)
-assets/js/               ES modules: main (routes), home, exam, result, train, stats,
+assets/js/               ES modules: main (screen), router (routes and data loading), home, exam, result, train, stats,
                          question, dialogs (accessible confirm/notice), exams (loading),
                          session, analysis and importer (pure, tested logic), scoring, store, i18n, rich, dom
 assets/icons/            PWA icons (PNG) and the SVG logo

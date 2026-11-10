@@ -150,7 +150,7 @@ Configuração única no GitHub: **Settings → Pages → Build and deployment �
 ```
 index.html               página única, rotas por hash
 assets/style/main.css    estilos (tokens CSS, tema escuro, responsivo)
-assets/js/               módulos ES: main (rotas), home, exam, result, train, stats,
+assets/js/               módulos ES: main (tela), router (rotas e carga de dados), home, exam, result, train, stats,
                          question, dialogs (confirmação/aviso acessíveis), exams (carregamento),
                          session, analysis e importer (lógica pura, testada), scoring, store, i18n, rich, dom
 assets/icons/            ícones do PWA (PNG) e o logo em SVG

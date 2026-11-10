@@ -7,57 +7,43 @@ import { renderResult, missingAttempt } from './result.js';
 import { renderTrain } from './train.js';
 import { renderStats } from './stats.js';
 import { loadManifest, loadExam } from './exams.js';
+import { createRouter } from './router.js';
 
 const root = document.getElementById('app');
-let dispose = null;
-let token = 0;
-function parseHash() {
-  const [path, query = ''] = (location.hash.slice(1) || '/').split('?');
-  return { parts: path.split('/').filter(Boolean), params: new URLSearchParams(query) };
-}
 
 export const go = (hash) => {
   if (location.hash === hash) route();
   else location.hash = hash;
 };
 
-async function route() {
-  const mine = ++token;
-  if (dispose) dispose();
-  dispose = null;
+// A lógica de rotas e de carga de dados está em router.js (testada sem navegador); aqui só se desenha.
+function showLoading() {
   clear(root);
   root.append(h('p', { class: 'status' }, t('loading')));
-  try {
-    const { parts, params } = parseHash();
-    let view;
-    if (parts[0] === 'train') {
-      const manifest = await loadManifest();
-      view = () => renderTrain(root, manifest, go);
-    } else if (parts[0] === 'stats') {
-      const manifest = await loadManifest();
-      view = () => renderStats(root, manifest, go);
-    } else if (parts[0] === 'exam' && parts[1]) {
-      const [exam] = await Promise.all([loadExam(parts[1]), loadManifest()]);
-      view = () => renderExam(root, exam, params.get('mode') === 'study' ? 'study' : 'exam', go);
-    } else if (parts[0] === 'result' && parts[1]) {
-      const attempt = store.attempt(parts[1]);
-      if (!attempt) view = () => missingAttempt(root);
-      else {
-        const [exam, manifest] = await Promise.all([loadExam(attempt.examId), loadManifest()]);
-        view = () => renderResult(root, exam, manifest, attempt, { timeUp: params.has('timeup') }, go);
-      }
-    } else {
-      const manifest = await loadManifest();
-      view = () => renderHome(root, manifest, { go, rerender: route });
-    }
-    if (mine !== token) return;
-    clear(root);
-    dispose = view() || null;
-  } catch (error) {
-    if (mine !== token) return;
-    clear(root);
-    root.append(h('p', { class: 'status status-error', role: 'alert' }, error.notFound ? t('notFound') : t('loadError')), h('p', {}, h('a', { href: '#/' }, t('back'))));
+}
+
+function showError(kind) {
+  clear(root);
+  root.append(h('p', { class: 'status status-error', role: 'alert' }, kind === 'notFound' ? t('notFound') : t('loadError')), h('p', {}, h('a', { href: '#/' }, t('back'))));
+}
+
+// Desenha a tela pedida e devolve o dispose dela (se houver).
+function show(view) {
+  clear(root);
+  switch (view.name) {
+    case 'train': return renderTrain(root, view.manifest, go);
+    case 'stats': return renderStats(root, view.manifest, go);
+    case 'exam': return renderExam(root, view.exam, view.mode, go);
+    case 'result': return renderResult(root, view.exam, view.manifest, view.attempt, { timeUp: view.timeUp }, go);
+    case 'missingAttempt': return missingAttempt(root);
+    default: return renderHome(root, view.manifest, { go, rerender: route });
   }
+}
+
+const router = createRouter({ loadManifest, loadExam, getAttempt: (id) => store.attempt(id), showLoading, showError, show });
+
+async function route() {
+  await router.navigate(location.hash);
   window.scrollTo(0, 0);
 }
 
