@@ -71,3 +71,25 @@ export function weakestDomains(rows, limit = 3) {
     .sort((a, b) => b.lost - a.lost)
     .slice(0, limit);
 }
+
+// Linhas da tabela por domínio: só domínios com questões respondidas, na ordem do manifesto.
+// avg = acertos / total (0 quando total é 0, nunca NaN).
+export function domainRows(domains, totals) {
+  return Object.entries(domains || {})
+    .map(([domain, info]) => {
+      const { correct = 0, total = 0 } = totals[domain] || {};
+      return { domain, name: info.name, weight: info.weight, correct, total, avg: total ? correct / total : 0 };
+    })
+    .filter((row) => row.total > 0);
+}
+
+// Números do topo da página: quantidade, média e melhor percentual (0 quando não há tentativas).
+export function overallStats(attempts) {
+  const percents = attempts.map((a) => a.percent).filter((p) => Number.isFinite(p));
+  const count = attempts.length;
+  return {
+    count,
+    avg: percents.length ? percents.reduce((sum, p) => sum + p, 0) / percents.length : 0,
+    best: percents.length ? Math.max(...percents) : 0,
+  };
+}

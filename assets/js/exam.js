@@ -5,6 +5,7 @@ import { rich } from './rich.js';
 import { grade, isCorrect, LETTERS } from './scoring.js';
 import { optionList, explainBlock, selectHint } from './question.js';
 import { isTrainId } from './analysis.js';
+import { createSession, hydrateSession, isPaused as sessionPaused, remainingMs, isExpired, togglePause as pauseSession, elapsedMs, checkWarning } from './session.js';
 
 // Tela de prova. Retorna uma função dispose() para limpar timers e atalhos.
 export function renderExam(root, exam, requestedMode, go) {
@@ -12,31 +13,20 @@ export function renderExam(root, exam, requestedMode, go) {
   const isTrain = isTrainId(exam.id);
   const effectiveMode = isTrain ? 'study' : requestedMode;
   
+  // A sessão é um objeto simples guardado no navegador; a lógica de tempo vive em session.js (pura e testada).
   let session = store.session(exam.id);
   if (!session) {
-    const now = Date.now();
-    session = {
-      mode: effectiveMode,
-      startedAt: now,
-      deadline: effectiveMode === 'exam' ? now + exam.minutes * 60000 : null,
-      answers: {},
-      flags: [],
-      checked: [],
-      current: 0,
-      paused: false,
-      pausedAt: null,
-      totalPausedMs: 0,
-      warned10: false,
-      warned5: false,
-    };
+    session = createSession({ mode: effectiveMode, minutes: exam.minutes, now: Date.now() });
     store.saveSession(exam.id, session);
+  } else {
+    session = hydrateSession(session, { mode: effectiveMode, minutes: exam.minutes }); // sessões antigas/corrompidas ficam utilizáveis
   }
   const total = exam.questions.length;
   const isStudy = session.mode === 'study';
   const save = () => store.saveSession(exam.id, session);
 
   const timerEl = h('span', { class: 'timer', role: 'timer' });
-  const pauseBtn = h('button', { type: 'button', class: 'btn btn-small', onclick: togglePause }, isStudy ? null : (session.paused ? t('resumeTimer') : t('pause')));
+  const pauseBtn = h('button', { type: 'button', class: 'btn btn-small', onclick: togglePause }, isStudy ? null : (sessionPaused(session) ? t('resumeTimer') : t('pause')));
   const progressEl = h('span', { class: 'progress-text' });
   const cardHost = h('section', { class: 'q-host' });
   const navButtons = exam.questions.map((q, i) =>
@@ -54,7 +44,7 @@ export function renderExam(root, exam, requestedMode, go) {
       'div',
       { class: 'exam-bar-title' },
       isTrain ? t('trainSessionName', { title: exam.set }) : t('examName', { day: exam.day, set: exam.set }),
-      h('span', { class: 'badge' }, isStudy ? t('modeStudy') : session.paused ? t('paused') : t('modeExam')),
+      h('span', { class: 'badge' }, isStudy ? t('modeStudy') : sessionPaused(session) ? t('paused') : t('modeExam')),
     ),
     h('div', { class: 'exam-bar-timer' }, h('span', { class: 'timer-label' }, isStudy ? t('noTimer') : t('timeLeft')), isStudy ? null : timerEl, isStudy ? null : pauseBtn),
     h('div', { class: 'exam-bar-actions' }, progressEl, h('button', { type: 'button', class: 'btn btn-danger', onclick: askFinish }, t('finish'))),
@@ -110,30 +100,16 @@ export function renderExam(root, exam, requestedMode, go) {
 
   function togglePause() {
     if (isStudy) return; // modo estudo não tem cronômetro
-    
-    session.paused = !session.paused;
-    
-    if (session.paused) {
-      session.pausedAt = Date.now();
-    } else if (session.pausedAt) {
-      // Acumula o tempo pausado e estende o deadline
-      const pauseDuration = Date.now() - session.pausedAt;
-      session.totalPausedMs += pauseDuration;
-      if (session.deadline) {
-        session.deadline += pauseDuration;
-      }
-      session.pausedAt = null;
-    }
-    
+    session = pauseSession(session, Date.now());
     save();
-    pauseBtn.textContent = session.paused ? t('resumeTimer') : t('pause');
-    topbar.querySelector('.badge').textContent = session.paused ? t('paused') : t('modeExam');
+    pauseBtn.textContent = sessionPaused(session) ? t('resumeTimer') : t('pause');
+    topbar.querySelector('.badge').textContent = sessionPaused(session) ? t('paused') : t('modeExam');
     renderCard();
     refreshChrome();
   }
 
   // ---------- renderização ----------
-  const isPaused = () => !isStudy && session.paused;
+  const isPaused = () => sessionPaused(session);
 
   function renderCard() {
     if (isPaused()) {
@@ -228,7 +204,11 @@ export function renderExam(root, exam, requestedMode, go) {
   }
 
   // ---------- finalização ----------
+  let finished = false; // protege contra finalizar duas vezes (ex.: prazo vencido ao reabrir + timer)
   function submit(timeUp) {
+    if (finished) return;
+    finished = true;
+    clearInterval(tick);
     const g = grade(exam, session.answers);
     const attempt = {
       id: `${exam.id}-${Date.now()}`,
@@ -236,7 +216,7 @@ export function renderExam(root, exam, requestedMode, go) {
       finishedAt: Date.now(),
       mode: session.mode,
       lang: getLang(),
-      durationMs: Math.max(0, Date.now() - session.startedAt - (session.totalPausedMs || 0) - (session.paused && session.pausedAt ? Date.now() - session.pausedAt : 0)),
+      durationMs: elapsedMs(session, Date.now()),
       answers: session.answers,
       flags: session.flags,
       correct: g.correct,
@@ -272,34 +252,22 @@ export function renderExam(root, exam, requestedMode, go) {
   
   if (!isStudy) {
     const update = () => {
-      if (session.paused) {
-        timerEl.textContent = formatTime(session.deadline - session.pausedAt);
-        timerEl.classList.remove('is-low');
-        return;
-      }
-      
-      const left = session.deadline - Date.now();
+      const now = Date.now();
+      const left = remainingMs(session, now);
       timerEl.textContent = formatTime(left);
-      timerEl.classList.toggle('is-low', left < 5 * 60000);
-      
-      // Avisos: um por limite, mesmo que o navegador tenha atrasado o timer (aba em segundo plano)
-      if (left <= 5 * 60000 && !session.warned5 && left > 0) {
-        session.warned5 = true;
-        session.warned10 = true;
+      timerEl.classList.toggle('is-low', !sessionPaused(session) && left < 5 * 60000);
+
+      // Avisos de 10 e 5 minutos: um por limite, mesmo que o navegador tenha atrasado o timer (aba em segundo plano)
+      const check = checkWarning(session, now);
+      if (check.warning) {
+        session = check.session;
         save();
-        showWarning(t('timeWarning5'));
-      } else if (left <= 10 * 60000 && left > 5 * 60000 && !session.warned10) {
-        session.warned10 = true;
-        save();
-        showWarning(t('timeWarning10'));
+        showWarning(t(check.warning === 5 ? 'timeWarning5' : 'timeWarning10'));
       }
-      
-      if (left <= 0) {
-        clearInterval(tick);
-        submit(true);
-      }
+
+      if (isExpired(session, now)) submit(true);
     };
-    
+
     function showWarning(message) {
       warningEl.textContent = message;
       warningEl.classList.add('show');
@@ -308,8 +276,8 @@ export function renderExam(root, exam, requestedMode, go) {
       }, 5000);
     }
     
-    update();
-    tick = setInterval(update, 1000);
+    update(); // prova já vencida ao reabrir: finaliza aqui, sem nem criar o intervalo
+    if (!finished) tick = setInterval(update, 1000);
   }
 
   function onKey(event) {

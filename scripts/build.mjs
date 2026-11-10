@@ -8,14 +8,18 @@ import { fileURLToPath } from 'node:url';
 import { execSync } from 'node:child_process';
 import { shareImagePaths } from './site-paths.mjs';
 
-const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+// CCDV_ROOT permite apontar o script para outra pasta (usado nos testes dos validadores).
+const root = process.env.CCDV_ROOT ? resolve(process.env.CCDV_ROOT) : resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const siteDir = join(root, '_site');
 
-let hash = 'dev';
-try {
-  hash = execSync('git rev-parse --short HEAD', { encoding: 'utf8' }).trim();
-} catch {
-  console.warn('⚠ Git não disponível, usando hash "dev"');
+// CCDV_HASH fixa a versão (testes e builds reproduzíveis); senão vale o commit atual.
+let hash = process.env.CCDV_HASH || 'dev';
+if (!process.env.CCDV_HASH) {
+  try {
+    hash = execSync('git rev-parse --short HEAD', { encoding: 'utf8', cwd: root, stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+  } catch {
+    console.warn('⚠ Git não disponível, usando hash "dev"');
+  }
 }
 console.log(`Build para deploy (hash: ${hash})`);
 

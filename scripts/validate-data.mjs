@@ -5,7 +5,8 @@ import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { shareImagePaths } from './site-paths.mjs';
 
-const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+// CCDV_ROOT permite apontar o script para outra pasta (usado nos testes dos validadores).
+const root = process.env.CCDV_ROOT ? resolve(process.env.CCDV_ROOT) : resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const errors = [];
 
 // Limites do teste de viés de tamanho das alternativas (só vale para simulados com questões suficientes).

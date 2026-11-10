@@ -2,7 +2,7 @@ import { h, mount, clear } from './dom.js';
 import { t } from './i18n.js';
 import { store } from './store.js';
 import { loadAllExams } from './exams.js';
-import { domainTotals, weakestDomains } from './analysis.js';
+import { domainTotals, domainRows, overallStats, weakestDomains } from './analysis.js';
 import { PASS_REFERENCE } from './scoring.js';
 
 const pct = (n) => `${Math.round(n * 100)}%`;
@@ -17,9 +17,7 @@ export function renderStats(root, manifest, go) {
     return undefined;
   }
 
-  const totalAttempts = attempts.length;
-  const avgPercent = attempts.reduce((sum, a) => sum + a.percent, 0) / totalAttempts;
-  const bestPercent = Math.max(...attempts.map((a) => a.percent));
+  const { count: totalAttempts, avg: avgPercent, best: bestPercent } = overallStats(attempts);
 
   const card = (label, value, extraClass = '') =>
     h(
@@ -51,12 +49,7 @@ export function renderStats(root, manifest, go) {
   loadAllExams(manifest).then((examsById) => {
     if (!active) return;
     const totals = domainTotals(attempts, examsById, store.train);
-    const rows = Object.entries(manifest.domains)
-      .map(([d, info]) => {
-        const { correct = 0, total = 0 } = totals[d] || {};
-        return { domain: d, name: info.name, weight: info.weight, correct, total, avg: total ? correct / total : 0 };
-      })
-      .filter((r) => r.total > 0);
+    const rows = domainRows(manifest.domains, totals);
 
     const chart = h(
       'div',
