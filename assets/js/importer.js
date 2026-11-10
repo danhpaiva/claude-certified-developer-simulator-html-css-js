@@ -65,19 +65,36 @@ export function normalizeTrain(raw) {
   return { id: raw.id, title, refs, createdAt };
 }
 
+// Um item hostil (getter que lança, Proxy...) nunca derruba a importação inteira: vira "inválido".
+const safely = (normalize, raw) => {
+  try {
+    return normalize(raw);
+  } catch {
+    return null;
+  }
+};
+
 // Aceita o formato antigo (lista de tentativas) e o atual ({ version, attempts, trains }).
 export function parseHistory(payload) {
+  try {
+    return parseHistoryUnsafe(payload);
+  } catch {
+    return { ok: false, attempts: [], trains: [], invalid: 0 }; // payload hostil (ex.: Proxy): recusado inteiro
+  }
+}
+
+function parseHistoryUnsafe(payload) {
   const list = Array.isArray(payload) ? payload : isObject(payload) && Array.isArray(payload.attempts) ? payload.attempts : null;
   if (!list) return { ok: false, attempts: [], trains: [], invalid: 0 };
 
   const attempts = [];
   let invalid = Math.max(0, list.length - MAX_ATTEMPTS_PER_IMPORT);
   for (const raw of list.slice(0, MAX_ATTEMPTS_PER_IMPORT)) {
-    const attempt = normalizeAttempt(raw);
+    const attempt = safely(normalizeAttempt, raw);
     if (attempt) attempts.push(attempt);
     else invalid += 1;
   }
   const rawTrains = isObject(payload) && Array.isArray(payload.trains) ? payload.trains.slice(0, MAX_ATTEMPTS_PER_IMPORT) : [];
-  const trains = rawTrains.map(normalizeTrain).filter(Boolean);
+  const trains = rawTrains.map((raw) => safely(normalizeTrain, raw)).filter(Boolean);
   return { ok: true, attempts, trains, invalid };
 }
