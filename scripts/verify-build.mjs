@@ -5,7 +5,9 @@ import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { shareImagePaths } from './site-paths.mjs';
 
-const site = join(resolve(dirname(fileURLToPath(import.meta.url)), '..'), '_site');
+// CCDV_ROOT permite apontar o script para outra pasta (usado nos testes dos validadores).
+const root = process.env.CCDV_ROOT ? resolve(process.env.CCDV_ROOT) : resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const site = join(root, '_site');
 const errors = [];
 const fail = (msg) => errors.push(msg);
 if (!existsSync(site)) {

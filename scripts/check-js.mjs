@@ -4,7 +4,8 @@ import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 
-const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+// CCDV_ROOT permite apontar o script para outra pasta (usado nos testes dos validadores).
+const root = process.env.CCDV_ROOT ? resolve(process.env.CCDV_ROOT) : resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const files = [];
 const walk = (dir) => {
   for (const name of readdirSync(dir)) {

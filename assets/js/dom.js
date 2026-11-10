@@ -33,7 +33,7 @@ export function clear(el) {
 }
 
 export function formatTime(ms) {
-  const total = Math.max(0, Math.round(ms / 1000));
+  const total = Number.isFinite(ms) ? Math.max(0, Math.round(ms / 1000)) : 0; // valor inválido (NaN, undefined) vira 00:00, nunca "NaN:NaN"
   const hh = Math.floor(total / 3600);
   const mm = Math.floor((total % 3600) / 60);
   const ss = total % 60;
