@@ -152,7 +152,7 @@ index.html               página única, rotas por hash
 assets/style/main.css    estilos (tokens CSS, tema escuro, responsivo)
 assets/js/               módulos ES: main (rotas), home, exam, result, train, stats,
                          question, dialogs (confirmação/aviso acessíveis), exams (carregamento),
-                         analysis e importer (lógica pura, testada), scoring, store, i18n, rich, dom
+                         session, analysis e importer (lógica pura, testada), scoring, store, i18n, rich, dom
 assets/icons/            ícones do PWA (PNG) e o logo em SVG
 data/exams.json          manifesto (domínios, pesos, simulados, PDFs)
 data/exams/DIA1-SIM1.json    questões de cada simulado (PT + EN, respostas, explicações)

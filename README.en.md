@@ -152,7 +152,7 @@ index.html               single page, hash routes
 assets/style/main.css    styles (CSS tokens, dark theme, responsive)
 assets/js/               ES modules: main (routes), home, exam, result, train, stats,
                          question, dialogs (accessible confirm/notice), exams (loading),
-                         analysis and importer (pure, tested logic), scoring, store, i18n, rich, dom
+                         session, analysis and importer (pure, tested logic), scoring, store, i18n, rich, dom
 assets/icons/            PWA icons (PNG) and the SVG logo
 data/exams.json          manifest (domains, weights, exams, PDFs)
 data/exams/DIA1-SIM1.json    questions of each exam (PT + EN, answers, explanations)
