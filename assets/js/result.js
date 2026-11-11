@@ -2,7 +2,7 @@ import { h, clear, mount, formatTime, downloadJson } from './dom.js';
 import { t, getLang } from './i18n.js';
 import { rich } from './rich.js';
 import { grade, lettersOf, LETTERS, PASS_REFERENCE } from './scoring.js';
-import { optionList, explainBlock, selectHint } from './question.js';
+import { optionList, explainBlock, selectHint, translationBlock } from './question.js';
 
 const pct = (n) => `${Math.round(n * 100)}%`;
 
@@ -72,6 +72,7 @@ export function renderResult(root, exam, manifest, attempt, { timeUp }, go) {
           optionList(q, copy, { given: it.given, name: `rev-${q.num}`, reveal: true, disabled: true }),
           h('p', { class: 'answer-line' }, `${t('yourAnswer')}: `, h('strong', {}, it.given.length ? lettersOf(it.given) : '—'), ` · ${t('correctAnswer')}: `, h('strong', {}, lettersOf(q.answer))),
           explainBlock(q, copy),
+          translationBlock(q, { reveal: true }),
         ),
       );
     }
