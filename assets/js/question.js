@@ -1,5 +1,5 @@
 import { h } from './dom.js';
-import { t } from './i18n.js';
+import { t, getLang } from './i18n.js';
 import { rich } from './rich.js';
 import { LETTERS } from './scoring.js';
 
@@ -55,6 +55,34 @@ export function explainBlock(q, copy) {
         )
       : null,
   );
+}
+
+// Na prova em inglês: botão que abre a mesma questão em português (enunciado, alternativas e, quando a resposta já
+// pode ser vista, a explicação). É só apoio de leitura: não mexe nas respostas. Em português devolve null.
+// open/onToggle deixam a tela lembrar se o painel estava aberto quando ela é redesenhada.
+export function translationBlock(q, { reveal = false, open = false, onToggle } = {}) {
+  if (getLang() !== 'en' || !q.pt) return null;
+  const copy = q.pt;
+  const body = h(
+    'div',
+    { class: 'translation-body', lang: 'pt-BR' },
+    h('div', { class: 'rich stem' }, rich(copy.stem)),
+    h(
+      'ol',
+      { class: 'tr-options' },
+      copy.options.map((text, i) =>
+        h('li', { class: reveal && q.answer.includes(i) ? 'is-correct' : null }, h('span', { class: 'letter', 'aria-hidden': 'true' }, LETTERS[i]), h('span', { class: 'opt-text' }, text)),
+      ),
+    ),
+    reveal ? h('div', { class: 'rich tr-explanation' }, rich(copy.explanation)) : null,
+  );
+  const details = h(
+    'details',
+    { class: 'translation', open, ontoggle: () => onToggle && onToggle(details.open) },
+    h('summary', {}, t('showTranslation')),
+    body,
+  );
+  return details;
 }
 
 export function selectHint(q) {

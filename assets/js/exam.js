@@ -3,7 +3,7 @@ import { t, getLang } from './i18n.js';
 import { store } from './store.js';
 import { rich } from './rich.js';
 import { grade, isCorrect, LETTERS } from './scoring.js';
-import { optionList, explainBlock, selectHint } from './question.js';
+import { optionList, explainBlock, selectHint, translationBlock } from './question.js';
 import { isTrainId } from './analysis.js';
 import { createSession, hydrateSession, isPaused as sessionPaused, remainingMs, isExpired, togglePause as pauseSession, elapsedMs, checkWarning } from './session.js';
 
@@ -110,6 +110,7 @@ export function renderExam(root, exam, requestedMode, go) {
 
   // ---------- renderização ----------
   const isPaused = () => sessionPaused(session);
+  const openTranslations = new Set(); // questões cujo painel de tradução está aberto (sobrevive ao redesenho do cartão)
 
   function renderCard() {
     if (isPaused()) {
@@ -149,6 +150,14 @@ export function renderExam(root, exam, requestedMode, go) {
           card.querySelectorAll('.opt').forEach((el) => el.classList.toggle('is-selected', el.querySelector('input').checked));
           if (checkBtn) checkBtn.disabled = !(session.answers[q.num] || []).length;
         },
+      }),
+    );
+
+    card.append(
+      translationBlock(q, {
+        reveal: checked,
+        open: openTranslations.has(q.num),
+        onToggle: (isOpen) => (isOpen ? openTranslations.add(q.num) : openTranslations.delete(q.num)),
       }),
     );
 

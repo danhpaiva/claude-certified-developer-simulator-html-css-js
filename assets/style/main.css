@@ -290,6 +290,14 @@ a:hover { text-decoration-thickness: 2px; }
 .verdict-ok { background: var(--ok-soft); color: var(--ok); }
 .verdict-bad { background: var(--bad-soft); color: var(--bad); }
 
+.translation { margin-top: 14px; border: 1px dashed var(--line); border-radius: 10px; padding: 0 14px; }
+.translation summary { cursor: pointer; padding: 10px 0; font-weight: 600; font-size: .9rem; }
+.translation[open] summary { border-bottom: 1px solid var(--line); margin-bottom: 12px; }
+.translation-body { padding-bottom: 14px; font-size: .95rem; }
+.tr-options { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 8px; }
+.tr-options li { display: flex; gap: 10px; align-items: flex-start; }
+.tr-options li.is-correct { font-weight: 600; }
+.tr-explanation { margin-top: 8px; padding-top: 10px; border-top: 1px solid var(--line); }
 .explain { margin-top: 16px; padding: 14px 16px; background: var(--surface-2); border-radius: 10px; font-size: .95rem; }
 .explain h4 { font-size: .8rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin-bottom: .4em; }
 .source { margin: .6em 0 0; font-size: .8rem; color: var(--muted); overflow-wrap: anywhere; }
@@ -733,3 +741,4 @@ kbd {
 .dialog h3 { margin-top: 0; }
 .dialog-text { margin: 0 0 .5em; }
 .dialog-text:last-child { margin-bottom: 0; }
+.tr-options .letter { flex: none; width: 1.6em; height: 1.6em; display: inline-grid; place-items: center; border: 1px solid var(--line); border-radius: 50%; font-size: .8rem; font-weight: 700; }
